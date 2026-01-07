@@ -155,6 +155,10 @@ export function subscribeToProfiles(callback) {
         return onSnapshot(q, (snapshot) => {
             const profiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             callback(profiles);
+        }, (error) => {
+            console.error("Firestore SubscribeToProfiles Error:", error);
+            // Fallback to local if desired, or just log
+            getProfiles().then(callback);
         });
     } else {
         // For localStorage, we just call it once or use a simple interval for "pseudo-sync"
@@ -203,6 +207,9 @@ export function subscribeToProfile(id, callback) {
             } else {
                 callback(null);
             }
+        }, (error) => {
+            console.error("Firestore SubscribeToProfile Error:", error);
+            getProfile(id).then(callback);
         });
     } else {
         getProfile(id).then(callback);
@@ -371,6 +378,9 @@ export function subscribeToTransactions(profileId, callback, limit = null) {
         return onSnapshot(q, (snapshot) => {
             const txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             callback(txs);
+        }, (error) => {
+            console.error("Firestore SubscribeToTransactions Error:", error);
+            getProfileTransactions(profileId, limit).then(callback);
         });
     } else {
         getProfileTransactions(profileId, limit).then(callback);
