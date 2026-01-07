@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getProfiles } from '../utils/storage';
+import { subscribeToProfiles } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 import ProfileCard from './ProfileCard';
 import { Users } from 'lucide-react';
 
 function Dashboard() {
     const [profiles, setProfiles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     useEffect(() => {
-        loadProfiles();
-    }, []);
+        setLoading(true);
+        const unsubscribe = subscribeToProfiles((data) => {
+            setProfiles(data);
+            setLoading(false);
+        });
 
-    const loadProfiles = () => {
-        const data = getProfiles();
-        setProfiles(data);
-    };
+        return () => unsubscribe();
+    }, [user]);
+
+    if (loading) {
+        return (
+            <div className="container" style={{ textAlign: 'center', paddingTop: '3rem' }}>
+                <div className="pulse">Actualizando perfiles...</div>
+            </div>
+        );
+    }
 
     if (profiles.length === 0) {
         return (
@@ -44,7 +56,7 @@ function Dashboard() {
                 gap: 'var(--spacing-lg)'
             }}>
                 {profiles.map(profile => (
-                    <ProfileCard key={profile.id} profile={profile} onUpdate={loadProfiles} />
+                    <ProfileCard key={profile.id} profile={profile} />
                 ))}
             </div>
         </div>

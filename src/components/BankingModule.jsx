@@ -3,12 +3,11 @@ import { Coins, Lock } from 'lucide-react';
 import { redeemTime } from '../utils/storage';
 
 function BankingModule({ profile, onUpdate }) {
-    const isLocked = profile.balance <= 0;
+    const isLocked = (profile.balance || 0) <= 0;
 
-    const handleRedeem = (minutes) => {
+    const handleRedeem = async (minutes) => {
         try {
-            redeemTime(profile.id, minutes);
-            onUpdate();
+            await redeemTime(profile.id, minutes);
         } catch (error) {
             alert(error.message);
         }

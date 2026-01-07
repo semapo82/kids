@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
-import { getProfile, deleteProfile } from '../utils/storage';
+import { subscribeToProfile, deleteProfile } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 import TaskChecklist from './TaskChecklist';
 import ConsequenceButtons from './ConsequenceButtons';
 import BankingModule from './BankingModule';
@@ -12,34 +13,42 @@ function ProfileDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     useEffect(() => {
-        loadProfile();
-    }, [id, refreshKey]);
+        setLoading(true);
+        const unsubscribe = subscribeToProfile(id, (data) => {
+            if (!data && !loading) {
+                // Profile was deleted
+                navigate('/');
+                return;
+            }
+            setProfile(data);
+            setLoading(false);
+        });
 
-    const loadProfile = () => {
-        const data = getProfile(id);
-        if (!data) {
-            navigate('/');
-            return;
-        }
-        setProfile(data);
-    };
+        return () => unsubscribe();
+    }, [id, user]);
 
-    const handleRefresh = () => {
-        setRefreshKey(prev => prev + 1);
-    };
-
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (window.confirm(`¿Estás seguro de eliminar el perfil de ${profile.name}?`)) {
-            deleteProfile(id);
+            await deleteProfile(id);
             navigate('/');
         }
     };
+
+    if (loading) {
+        return <div className="container">Cargando...</div>;
+    }
 
     if (!profile) {
-        return <div className="container">Cargando...</div>;
+        return (
+            <div className="container" style={{ textAlign: 'center', paddingTop: '3rem' }}>
+                <p>Perfil no encontrado.</p>
+                <button onClick={() => navigate('/')} className="btn btn-primary">Volver al Dashboard</button>
+            </div>
+        );
     }
 
     const balanceColor = profile.balance > 0 ? 'var(--color-success)' : 'var(--color-danger)';
@@ -94,7 +103,7 @@ function ProfileDetail() {
                     <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
                         ✅ Tareas Diarias
                     </h3>
-                    <TaskChecklist profile={profile} onUpdate={handleRefresh} />
+                    <TaskChecklist profile={profile} />
                 </div>
 
                 {/* Consequences */}
@@ -102,13 +111,13 @@ function ProfileDetail() {
                     <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
                         ⚠️ Consecuencias
                     </h3>
-                    <ConsequenceButtons profileId={id} onUpdate={handleRefresh} />
+                    <ConsequenceButtons profileId={id} />
                 </div>
             </div>
 
             {/* Banking Module */}
             <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <BankingModule profile={profile} onUpdate={handleRefresh} />
+                <BankingModule profile={profile} />
             </div>
 
             {/* History Chart */}

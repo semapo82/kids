@@ -12,6 +12,7 @@ import {
     Filler
 } from 'chart.js';
 import { getProfileTransactions } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 import { format, subDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -36,13 +37,14 @@ const VIEW_MODES = {
 function HistoryChart({ profileId }) {
     const [viewMode, setViewMode] = useState(VIEW_MODES.WEEKLY);
     const [chartData, setChartData] = useState(null);
+    const { user } = useAuth();
 
     useEffect(() => {
         loadChartData();
-    }, [profileId, viewMode]);
+    }, [profileId, viewMode, user]);
 
-    const loadChartData = () => {
-        const transactions = getProfileTransactions(profileId);
+    const loadChartData = async () => {
+        const transactions = await getProfileTransactions(profileId);
 
         let labels = [];
         let data = [];

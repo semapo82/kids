@@ -5,20 +5,18 @@ import { completeTask, addInitiative } from '../utils/storage';
 function TaskChecklist({ profile, onUpdate }) {
     const [initiativeText, setInitiativeText] = useState('');
 
-    const handleTaskComplete = (taskId) => {
-        completeTask(profile.id, taskId);
-        onUpdate();
+    const handleTaskComplete = async (taskId) => {
+        await completeTask(profile.id, taskId);
     };
 
-    const handleInitiative = () => {
+    const handleInitiative = async () => {
         if (!initiativeText.trim()) {
             alert('Por favor describe la iniciativa');
             return;
         }
 
-        addInitiative(profile.id, initiativeText);
+        await addInitiative(profile.id, initiativeText);
         setInitiativeText('');
-        onUpdate();
     };
 
     return (

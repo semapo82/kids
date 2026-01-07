@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save } from 'lucide-react';
 import { createProfile, getProfile, updateProfile } from '../utils/storage';
@@ -8,26 +8,32 @@ function ProfileForm() {
     const { id } = useParams();
     const isEdit = Boolean(id);
 
-    const [formData, setFormData] = useState(() => {
-        if (isEdit) {
-            const profile = getProfile(id);
-            return {
-                name: profile?.name || '',
-                weeklyGoalHours: profile?.weeklyGoalHours || 0,
-                customTasks: profile?.tasks?.filter(t => t.id !== 'breathing').map(t => ({
-                    name: t.name,
-                    points: t.points
-                })) || []
-            };
-        }
-        return {
-            name: '',
-            weeklyGoalHours: 0,
-            customTasks: []
-        };
+    const [formData, setFormData] = useState({
+        name: '',
+        weeklyGoalHours: 0,
+        customTasks: []
     });
+    const [loading, setLoading] = useState(isEdit);
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        if (isEdit) {
+            getProfile(id).then(profile => {
+                if (profile) {
+                    setFormData({
+                        name: profile.name || '',
+                        weeklyGoalHours: profile.weeklyGoalHours || 0,
+                        customTasks: profile.tasks?.filter(t => t.id !== 'breathing').map(t => ({
+                            name: t.name,
+                            points: t.points
+                        })) || []
+                    });
+                }
+                setLoading(false);
+            });
+        }
+    }, [id, isEdit]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.name.trim()) {
@@ -36,12 +42,12 @@ function ProfileForm() {
         }
 
         if (isEdit) {
-            updateProfile(id, {
+            await updateProfile(id, {
                 name: formData.name,
                 weeklyGoalHours: formData.weeklyGoalHours
             });
         } else {
-            createProfile(formData);
+            await createProfile(formData);
         }
 
         navigate('/');
@@ -64,6 +70,10 @@ function ProfileForm() {
         const updated = formData.customTasks.filter((_, i) => i !== index);
         setFormData({ ...formData, customTasks: updated });
     };
+
+    if (loading) {
+        return <div className="container">Cargando...</div>;
+    }
 
     return (
         <div className="fade-in">

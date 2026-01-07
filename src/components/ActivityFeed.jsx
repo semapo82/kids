@@ -1,10 +1,27 @@
-import React from 'react';
-import { getProfileTransactions } from '../utils/storage';
+import React, { useState, useEffect } from 'react';
+import { subscribeToTransactions } from '../utils/storage';
+import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
 import { TrendingUp, TrendingDown, RotateCcw, Coins } from 'lucide-react';
 
 function ActivityFeed({ profileId }) {
-    const transactions = getProfileTransactions(profileId, 5);
+    const [transactions, setTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+
+    useEffect(() => {
+        setLoading(true);
+        const unsubscribe = subscribeToTransactions(profileId, (data) => {
+            setTransactions(data);
+            setLoading(false);
+        }, 5);
+
+        return () => unsubscribe();
+    }, [profileId, user]);
+
+    if (loading) {
+        return <div style={{ textAlign: 'center', padding: 'var(--spacing-md)' }}>Cargando actividad...</div>;
+    }
 
     if (transactions.length === 0) {
         return (
