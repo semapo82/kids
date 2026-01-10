@@ -68,6 +68,9 @@ export async function setAuthUser(user) {
 
         // 2. Sync local data if any (now to the family collection)
         await syncLocalDataToCloud();
+
+        // 3. Check for weekly reset immediately after auth/sync
+        await checkWeeklyReset();
     } else if (!user) {
         currentFamilyId = null;
         notifyFamilyChange();
@@ -179,12 +182,24 @@ export async function initializeStorage() {
     // Check version and migrate if needed
     const version = localStorage.getItem(STORAGE_KEYS.VERSION);
     if (!version || version !== CURRENT_VERSION) {
-        // Future: Add migration logic here
         localStorage.setItem(STORAGE_KEYS.VERSION, CURRENT_VERSION);
     }
+}
 
-    // Check if we need to reset for new week
-    const lastReset = localStorage.getItem(STORAGE_KEYS.LAST_RESET);
+/**
+ * Check and perform weekly reset for the family
+ */
+async function checkWeeklyReset() {
+    if (!currentUser || !currentFamilyId) return;
+
+    const familyConfigRef = doc(db, 'families', currentFamilyId, 'config', 'settings');
+    const familyConfigSnap = await getDoc(familyConfigRef);
+
+    let lastReset = null;
+    if (familyConfigSnap.exists()) {
+        lastReset = familyConfigSnap.data().lastReset;
+    }
+
     if (shouldResetWeek(lastReset)) {
         await performWeeklyReset();
     }
@@ -220,6 +235,11 @@ async function performWeeklyReset() {
     }
 
     await saveProfiles(profiles);
+
+    if (currentFamilyId) {
+        const familyConfigRef = doc(db, 'families', currentFamilyId, 'config', 'settings');
+        await setDoc(familyConfigRef, { lastReset: now }, { merge: true });
+    }
     localStorage.setItem(STORAGE_KEYS.LAST_RESET, now);
 }
 
@@ -503,18 +523,16 @@ export async function addTransaction(transaction, skipProfileUpdate = false) {
 /**
  * Complete a task
  */
-export async function completeTask(profileId, taskId) {
+export async function completeTask(profileId, taskId, date = new Date()) {
     const profile = await getProfile(profileId);
     if (!profile) return null;
 
     const task = profile.tasks.find(t => t.id === taskId);
-    if (!task || task.completedToday) return null;
+    if (!task) return null;
 
-    // Mark task as completed
-    const updatedTasks = profile.tasks.map(t =>
-        t.id === taskId ? { ...t, completedToday: true } : t
-    );
-    await updateProfile(profileId, { tasks: updatedTasks });
+    // Note: We no longer update profile.tasks[i].completedToday 
+    // because that field doesn't support retroactive dates.
+    // The UI will determine status from transactions.
 
     // Add transaction
     return await addTransaction({
@@ -522,39 +540,42 @@ export async function completeTask(profileId, taskId) {
         type: 'task',
         amount: task.points,
         description: `Tarea completada: ${task.name}`,
-        taskId
+        taskId,
+        timestamp: date.toISOString()
     });
 }
 
 /**
  * Add initiative (custom task)
  */
-export async function addInitiative(profileId, description) {
+export async function addInitiative(profileId, description, date = new Date()) {
     return await addTransaction({
         profileId,
         type: 'initiative',
         amount: 5,
-        description: `Iniciativa: ${description}`
+        description: `Iniciativa: ${description}`,
+        timestamp: date.toISOString()
     });
 }
 
 /**
  * Apply consequence
  */
-export async function applyConsequence(profileId, consequenceType, amount, description) {
+export async function applyConsequence(profileId, consequenceType, amount, description, date = new Date()) {
     return await addTransaction({
         profileId,
         type: 'consequence',
         amount: -Math.abs(amount), // Ensure negative
         description: `Consecuencia: ${description}`,
-        consequenceType
+        consequenceType,
+        timestamp: date.toISOString()
     });
 }
 
 /**
  * Redeem time from bank
  */
-export async function redeemTime(profileId, minutes) {
+export async function redeemTime(profileId, minutes, date = new Date()) {
     const profile = await getProfile(profileId);
     if (!profile || (profile.balance || 0) <= 0) {
         throw new Error('Privilegios suspendidos - Saldo insuficiente');
@@ -568,7 +589,8 @@ export async function redeemTime(profileId, minutes) {
         profileId,
         type: 'redemption',
         amount: -minutes,
-        description: `Canjeado: ${minutes} Min`
+        description: `Canjeado: ${minutes} Min`,
+        timestamp: date.toISOString()
     });
 }
 

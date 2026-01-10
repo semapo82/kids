@@ -32,6 +32,37 @@ export function isCurrentWeek(date) {
 }
 
 /**
+ * Check if a date is in the future
+ */
+export function isFutureDate(date) {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    return date > now;
+}
+
+/**
+ * Check if two dates are the same day
+ */
+export function isSameDay(d1, d2) {
+    const date1 = typeof d1 === 'string' ? parseISO(d1) : d1;
+    const date2 = typeof d2 === 'string' ? parseISO(d2) : d2;
+    return (
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate()
+    );
+}
+
+/**
+ * Get the ISO string of the start of the day
+ */
+export function startOfDayISO(date = new Date()) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+}
+
+/**
  * Format date for display
  */
 export function formatDate(date, formatStr = 'PPp') {

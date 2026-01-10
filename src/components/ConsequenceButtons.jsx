@@ -37,10 +37,10 @@ const CONSEQUENCES = [
     }
 ];
 
-function ConsequenceButtons({ profileId, onUpdate }) {
+function ConsequenceButtons({ profileId, activeDate, onUpdate }) {
     const handleConsequence = async (consequence) => {
         if (window.confirm(`¿Aplicar consecuencia: ${consequence.label} (-${consequence.amount} Min)?`)) {
-            await applyConsequence(profileId, consequence.type, consequence.amount, consequence.description);
+            await applyConsequence(profileId, consequence.type, consequence.amount, consequence.description, activeDate);
         }
     };
 

@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { CheckCircle, Circle, Lightbulb } from 'lucide-react';
-import { completeTask, addInitiative } from '../utils/storage';
+import { completeTask, addInitiative, subscribeToTransactions } from '../utils/storage';
+import { isSameDay } from '../utils/dateUtils';
 
-function TaskChecklist({ profile, onUpdate }) {
+function TaskChecklist({ profile, activeDate }) {
     const [initiativeText, setInitiativeText] = useState('');
+    const [transactions, setTransactions] = useState([]);
+
+    useEffect(() => {
+        const unsubscribe = subscribeToTransactions(profile.id, (data) => {
+            setTransactions(data);
+        });
+        return () => unsubscribe();
+    }, [profile.id]);
 
     const handleTaskComplete = async (taskId) => {
-        await completeTask(profile.id, taskId);
+        await completeTask(profile.id, taskId, activeDate);
     };
 
     const handleInitiative = async () => {
@@ -15,60 +22,71 @@ function TaskChecklist({ profile, onUpdate }) {
             return;
         }
 
-        await addInitiative(profile.id, initiativeText);
+        await addInitiative(profile.id, initiativeText, activeDate);
         setInitiativeText('');
+    };
+
+    const isTaskCompletedOnDate = (taskId) => {
+        return transactions.some(tx =>
+            tx.type === 'task' &&
+            tx.taskId === taskId &&
+            isSameDay(new Date(tx.timestamp), activeDate)
+        );
     };
 
     return (
         <div>
             {/* Regular Tasks */}
             <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                {profile.tasks.map(task => (
-                    <div
-                        key={task.id}
-                        onClick={() => !task.completedToday && handleTaskComplete(task.id)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-md)',
-                            padding: 'var(--spacing-md)',
-                            background: task.completedToday ? 'var(--color-success-light)' : 'var(--bg-secondary)',
-                            borderRadius: 'var(--border-radius-sm)',
-                            marginBottom: 'var(--spacing-sm)',
-                            cursor: task.completedToday ? 'default' : 'pointer',
-                            transition: 'all var(--transition-fast)',
-                            border: '2px solid transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!task.completedToday) {
-                                e.currentTarget.style.borderColor = 'var(--color-success)';
-                                e.currentTarget.style.transform = 'translateX(4px)';
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = 'transparent';
-                            e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                    >
-                        {task.completedToday ? (
-                            <CheckCircle size={24} color="var(--color-success)" />
-                        ) : (
-                            <Circle size={24} color="var(--text-muted)" />
-                        )}
-                        <div style={{ flex: 1 }}>
-                            <div style={{
-                                fontWeight: 500,
-                                color: task.completedToday ? 'var(--color-success)' : 'var(--text-primary)',
-                                textDecoration: task.completedToday ? 'line-through' : 'none'
-                            }}>
-                                {task.name}
+                {profile.tasks.map(task => {
+                    const isCompleted = isTaskCompletedOnDate(task.id);
+                    return (
+                        <div
+                            key={task.id}
+                            onClick={() => !isCompleted && handleTaskComplete(task.id)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--spacing-md)',
+                                padding: 'var(--spacing-md)',
+                                background: isCompleted ? 'var(--color-success-light)' : 'var(--bg-secondary)',
+                                borderRadius: 'var(--border-radius-sm)',
+                                marginBottom: 'var(--spacing-sm)',
+                                cursor: isCompleted ? 'default' : 'pointer',
+                                transition: 'all var(--transition-fast)',
+                                border: '2px solid transparent'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isCompleted) {
+                                    e.currentTarget.style.borderColor = 'var(--color-success)';
+                                    e.currentTarget.style.transform = 'translateX(4px)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'transparent';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }}
+                        >
+                            {isCompleted ? (
+                                <CheckCircle size={24} color="var(--color-success)" />
+                            ) : (
+                                <Circle size={24} color="var(--text-muted)" />
+                            )}
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontWeight: 500,
+                                    color: isCompleted ? 'var(--color-success)' : 'var(--text-primary)',
+                                    textDecoration: isCompleted ? 'line-through' : 'none'
+                                }}>
+                                    {task.name}
+                                </div>
+                            </div>
+                            <div className="badge badge-success">
+                                +{task.points} Min
                             </div>
                         </div>
-                        <div className="badge badge-success">
-                            +{task.points} Min
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Initiative Button */}

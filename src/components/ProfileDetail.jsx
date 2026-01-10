@@ -8,12 +8,15 @@ import ConsequenceButtons from './ConsequenceButtons';
 import BankingModule from './BankingModule';
 import ActivityFeed from './ActivityFeed';
 import HistoryChart from './HistoryChart';
+import { formatDate, isSameDay, isFutureDate } from '../utils/dateUtils';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function ProfileDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [activeDate, setActiveDate] = useState(new Date());
     const { user } = useAuth();
 
     useEffect(() => {
@@ -93,8 +96,55 @@ function ProfileDetail() {
                 }}>
                     {profile.balance} Min
                 </div>
-                <div style={{ color: 'var(--text-muted)' }}>
+                <div style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
                     Saldo Actual
+                </div>
+
+                {/* Date Selector */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 'var(--spacing-md)',
+                    paddingTop: 'var(--spacing-md)',
+                    borderTop: '1px solid var(--border-color)'
+                }}>
+                    <button
+                        onClick={() => {
+                            const newDate = new Date(activeDate);
+                            newDate.setDate(newDate.getDate() - 1);
+                            setActiveDate(newDate);
+                        }}
+                        className="btn btn-icon btn-secondary"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 'var(--spacing-sm)',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)'
+                    }}>
+                        <CalendarIcon size={18} className="text-primary" />
+                        {isSameDay(activeDate, new Date()) ? 'Hoy' : formatDate(activeDate, 'EEEE, d MMM')}
+                    </div>
+
+                    <button
+                        onClick={() => {
+                            const newDate = new Date(activeDate);
+                            newDate.setDate(newDate.getDate() + 1);
+                            if (!isFutureDate(newDate)) {
+                                setActiveDate(newDate);
+                            }
+                        }}
+                        className="btn btn-icon btn-secondary"
+                        disabled={isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1)))}
+                        style={{ opacity: isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1))) ? 0.3 : 1 }}
+                    >
+                        <ChevronRight size={18} />
+                    </button>
                 </div>
             </div>
 
@@ -110,7 +160,7 @@ function ProfileDetail() {
                     <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
                         ✅ Tareas Diarias
                     </h3>
-                    <TaskChecklist profile={profile} />
+                    <TaskChecklist profile={profile} activeDate={activeDate} />
                 </div>
 
                 {/* Consequences */}
@@ -118,13 +168,12 @@ function ProfileDetail() {
                     <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
                         ⚠️ Consecuencias
                     </h3>
-                    <ConsequenceButtons profileId={id} />
+                    <ConsequenceButtons profileId={id} activeDate={activeDate} />
                 </div>
             </div>
 
-            {/* Banking Module */}
             <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <BankingModule profile={profile} />
+                <BankingModule profile={profile} activeDate={activeDate} />
             </div>
 
             {/* History Chart */}
