@@ -530,16 +530,34 @@ export async function completeTask(profileId, taskId, date = new Date()) {
     const task = profile.tasks.find(t => t.id === taskId);
     if (!task) return null;
 
-    // Note: We no longer update profile.tasks[i].completedToday 
-    // because that field doesn't support retroactive dates.
-    // The UI will determine status from transactions.
-
     // Add transaction
     return await addTransaction({
         profileId,
         type: 'task',
         amount: task.points,
         description: `Tarea completada: ${task.name}`,
+        taskId,
+        timestamp: date.toISOString()
+    });
+}
+
+/**
+ * Undo a task completion (Uncheck)
+ */
+export async function undoTaskCompletion(profileId, taskId, date = new Date()) {
+    const profile = await getProfile(profileId);
+    if (!profile) return null;
+
+    const task = profile.tasks.find(t => t.id === taskId);
+    if (!task) return null;
+
+    // We don't delete the old transaction (to keep history consistent), 
+    // instead we add a reversal transaction.
+    return await addTransaction({
+        profileId,
+        type: 'task_reversal',
+        amount: -task.points,
+        description: `Tarea desmarcada: ${task.name}`,
         taskId,
         timestamp: date.toISOString()
     });

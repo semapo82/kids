@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Lightbulb } from 'lucide-react';
-import { completeTask, addInitiative, subscribeToTransactions } from '../utils/storage';
+import { completeTask, undoTaskCompletion, addInitiative, subscribeToTransactions } from '../utils/storage';
 import { isSameDay } from '../utils/dateUtils';
 
 function TaskChecklist({ profile, activeDate }) {
@@ -14,8 +14,12 @@ function TaskChecklist({ profile, activeDate }) {
         return () => unsubscribe();
     }, [profile.id]);
 
-    const handleTaskComplete = async (taskId) => {
-        await completeTask(profile.id, taskId, activeDate);
+    const handleTaskToggle = async (taskId, isCurrentlyCompleted) => {
+        if (isCurrentlyCompleted) {
+            await undoTaskCompletion(profile.id, taskId, activeDate);
+        } else {
+            await completeTask(profile.id, taskId, activeDate);
+        }
     };
 
     const handleInitiative = async () => {
@@ -29,11 +33,19 @@ function TaskChecklist({ profile, activeDate }) {
     };
 
     const isTaskCompletedOnDate = (taskId) => {
-        return transactions.some(tx =>
-            tx.type === 'task' &&
+        // Calculate net completion count for this task on this date
+        // (number of 'task' entries minus number of 'task_reversal' entries)
+        const entriesOnDate = transactions.filter(tx =>
+            (tx.type === 'task' || tx.type === 'task_reversal') &&
             tx.taskId === taskId &&
             isSameDay(new Date(tx.timestamp), activeDate)
         );
+
+        const netBalance = entriesOnDate.reduce((sum, tx) => {
+            return sum + (tx.type === 'task' ? 1 : -1);
+        }, 0);
+
+        return netBalance > 0;
     };
 
     return (
@@ -45,7 +57,7 @@ function TaskChecklist({ profile, activeDate }) {
                     return (
                         <div
                             key={task.id}
-                            onClick={() => !isCompleted && handleTaskComplete(task.id)}
+                            onClick={() => handleTaskToggle(task.id, isCompleted)}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -54,7 +66,7 @@ function TaskChecklist({ profile, activeDate }) {
                                 background: isCompleted ? 'var(--color-success-light)' : 'var(--bg-secondary)',
                                 borderRadius: 'var(--border-radius-sm)',
                                 marginBottom: 'var(--spacing-sm)',
-                                cursor: isCompleted ? 'default' : 'pointer',
+                                cursor: 'pointer',
                                 transition: 'all var(--transition-fast)',
                                 border: '2px solid transparent'
                             }}
