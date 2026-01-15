@@ -52,6 +52,9 @@ function ConsequenceButtons({ profile, activeDate, onUpdate }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
             {consequences.map(consequence => {
                 const Icon = ICON_MAP[consequence.icon] || AlertTriangle;
+                // Normalizar color si viene de datos antiguos
+                const color = consequence.color === '#dc2626' ? 'var(--color-danger)' : consequence.color;
+
                 return (
                     <button
                         key={consequence.type}
@@ -60,7 +63,7 @@ function ConsequenceButtons({ profile, activeDate, onUpdate }) {
                         style={{
                             width: '100%',
                             justifyContent: 'flex-start',
-                            background: `linear-gradient(135deg, ${consequence.color} 0%, ${consequence.color}dd 100%)`,
+                            background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
                             color: 'white',
                             padding: 'var(--spacing-md)',
                             textAlign: 'left'

@@ -29,7 +29,10 @@ function ProfileForm() {
                             points: t.points,
                             isManual: t.isManual || false
                         })) || [],
-                        consequences: profile.consequences || getDefaultConsequences()
+                        consequences: (profile.consequences || getDefaultConsequences()).map(c => ({
+                            ...c,
+                            color: c.color === '#dc2626' ? 'var(--color-danger)' : c.color
+                        }))
                     });
                 }
                 setLoading(false);
