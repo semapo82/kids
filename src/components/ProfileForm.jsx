@@ -23,6 +23,7 @@ function ProfileForm() {
                         name: profile.name || '',
                         weeklyGoalHours: profile.weeklyGoalHours || 0,
                         customTasks: profile.tasks?.filter(t => t.id !== 'breathing').map(t => ({
+                            id: t.id,
                             name: t.name,
                             points: t.points
                         })) || []
@@ -42,9 +43,24 @@ function ProfileForm() {
         }
 
         if (isEdit) {
+            // Get the current profile to preserve the breathing task
+            const currentProfile = await getProfile(id);
+            const breathingTask = currentProfile.tasks?.find(t => t.id === 'breathing');
+
+            // Rebuild tasks array: breathing task + updated custom tasks
+            const updatedTasks = [
+                breathingTask || { id: 'breathing', name: 'Respiración consciente', points: 5 },
+                ...formData.customTasks.map(t => ({
+                    id: t.id || `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    name: t.name,
+                    points: t.points
+                }))
+            ];
+
             await updateProfile(id, {
                 name: formData.name,
-                weeklyGoalHours: formData.weeklyGoalHours
+                weeklyGoalHours: formData.weeklyGoalHours,
+                tasks: updatedTasks
             });
         } else {
             await createProfile(formData);
@@ -118,53 +134,51 @@ function ProfileForm() {
                     </div>
 
                     {/* Custom Tasks */}
-                    {!isEdit && (
-                        <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                                <label className="label" style={{ marginBottom: 0 }}>Tareas personalizadas</label>
-                                <button type="button" onClick={addTask} className="btn btn-sm btn-primary">
-                                    + Añadir Tarea
+                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
+                            <label className="label" style={{ marginBottom: 0 }}>Tareas personalizadas</label>
+                            <button type="button" onClick={addTask} className="btn btn-sm btn-primary">
+                                + Añadir Tarea
+                            </button>
+                        </div>
+
+                        {formData.customTasks.map((task, index) => (
+                            <div key={index} style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr auto auto',
+                                gap: 'var(--spacing-sm)',
+                                marginBottom: 'var(--spacing-sm)'
+                            }}>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    value={task.name}
+                                    onChange={(e) => updateTask(index, 'name', e.target.value)}
+                                    placeholder="Nombre de la tarea"
+                                />
+                                <input
+                                    type="number"
+                                    className="input"
+                                    value={task.points}
+                                    onChange={(e) => updateTask(index, 'points', parseInt(e.target.value) || 5)}
+                                    placeholder="Puntos"
+                                    min="1"
+                                    style={{ width: '100px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => removeTask(index)}
+                                    className="btn btn-danger btn-sm"
+                                >
+                                    ✕
                                 </button>
                             </div>
+                        ))}
 
-                            {formData.customTasks.map((task, index) => (
-                                <div key={index} style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr auto auto',
-                                    gap: 'var(--spacing-sm)',
-                                    marginBottom: 'var(--spacing-sm)'
-                                }}>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={task.name}
-                                        onChange={(e) => updateTask(index, 'name', e.target.value)}
-                                        placeholder="Nombre de la tarea"
-                                    />
-                                    <input
-                                        type="number"
-                                        className="input"
-                                        value={task.points}
-                                        onChange={(e) => updateTask(index, 'points', parseInt(e.target.value) || 5)}
-                                        placeholder="Puntos"
-                                        min="1"
-                                        style={{ width: '100px' }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeTask(index)}
-                                        className="btn btn-danger btn-sm"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
-
-                            <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
-                                Nota: "Respiración consciente" (+5 Min) se añade automáticamente
-                            </small>
-                        </div>
-                    )}
+                        <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
+                            Nota: "Respiración consciente" (+5 Min) se añade automáticamente
+                        </small>
+                    </div>
 
                     {/* Submit */}
                     <button type="submit" className="btn btn-success btn-lg" style={{ width: '100%' }}>
