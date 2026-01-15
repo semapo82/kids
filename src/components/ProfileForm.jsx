@@ -138,6 +138,15 @@ function ProfileForm() {
         // Convert weekly goal from hours to minutes
         const weeklyGoalMinutes = formData.weeklyGoalHours * 60;
 
+        // Subtract the initial 60 minutes that are given for free each week
+        const INITIAL_BALANCE = 60;
+        const minutesToEarn = weeklyGoalMinutes - INITIAL_BALANCE;
+
+        if (minutesToEarn <= 0) {
+            alert('La meta semanal es menor o igual a la hora gratis (60 min). No es necesario hacer tareas.');
+            return;
+        }
+
         // Count tasks that are not manual (including breathing task)
         const automaticTasks = formData.customTasks.filter(t => !t.isManual);
         const totalAutomaticTasks = automaticTasks.length + 1; // +1 for breathing task
@@ -147,8 +156,8 @@ function ProfileForm() {
             return;
         }
 
-        // Calculate points per task: weeklyGoal / (tasks * 7 days)
-        const pointsPerTask = Math.round(weeklyGoalMinutes / (totalAutomaticTasks * 7));
+        // Calculate points per task: (weeklyGoal - initialBalance) / (tasks * 7 days)
+        const pointsPerTask = Math.round(minutesToEarn / (totalAutomaticTasks * 7));
 
         // Update automatic tasks
         const updatedTasks = formData.customTasks.map(task => {
@@ -160,7 +169,7 @@ function ProfileForm() {
 
         setFormData({ ...formData, customTasks: updatedTasks });
 
-        alert(`Tiempos calculados automáticamente: ${pointsPerTask} minutos por tarea\n(Meta semanal: ${formData.weeklyGoalHours}h = ${weeklyGoalMinutes} min / ${totalAutomaticTasks} tareas / 7 días)`);
+        alert(`Tiempos calculados automáticamente: ${pointsPerTask} minutos por tarea\n\nCálculo:\nMeta semanal: ${formData.weeklyGoalHours}h = ${weeklyGoalMinutes} min\nMenos hora gratis: -${INITIAL_BALANCE} min\nA ganar con tareas: ${minutesToEarn} min\nTareas automáticas: ${totalAutomaticTasks}\nDías: 7\nResultado: ${minutesToEarn} / ${totalAutomaticTasks} / 7 = ${pointsPerTask} min/tarea`);
     };
 
     if (loading) {
