@@ -37,40 +37,47 @@ function ConsequenceButtons({ profile, activeDate }) {
 
         if (netBalance <= 0) return null;
 
-        // Find the LATEST consequence record to see its targetSession
         const lastRecord = entriesOnDate.find(tx => tx.type === 'consequence');
-        return lastRecord?.targetSession || 'general';
+        return lastRecord?.targetSession || null;
     };
 
-    const handleToggle = async (consequence, targetSession = 'general') => {
+    const plannedDays = profile.weeklyPlan ? Object.entries(profile.weeklyPlan)
+        .filter(([day, hours]) => hours > 0)
+        .map(([day]) => day) : [];
+
+    const handleToggle = async (consequence, targetSession = null) => {
         if (processingTypes.has(consequence.type)) return;
 
         const currentSession = getAppliedSession(consequence.type);
         const isApplied = Boolean(currentSession);
 
+        // Si no hay sesión destino y hay plan, usamos la primera disponible por defecto.
+        // Si no hay plan, no hay targetSession (null).
+        const finalTarget = targetSession || (plannedDays.length > 0 ? plannedDays[0] : null);
+
         setProcessingTypes(prev => new Set(prev).add(consequence.type));
 
         try {
             if (isApplied) {
-                // Si hacemos clic en la sesión que ya está activa -> Desmarcamos (Perdonamos)
-                if (currentSession === targetSession) {
+                // Si hacemos clic sin especificar sesión (en el check) o en la sesión activa -> Desmarcamos
+                if (!targetSession || currentSession === targetSession) {
                     await undoConsequence(
                         profile.id,
                         consequence.type,
                         consequence.amount,
                         consequence.label,
                         activeDate,
-                        currentSession === 'general' ? null : currentSession
+                        currentSession
                     );
                 } else {
-                    // Si hacemos clic en una sesión DIFERENTE -> Cambiamos sesión (Undo antigua + Apply nueva)
+                    // Cambio de sesión (Undo antigua + Apply nueva)
                     await undoConsequence(
                         profile.id,
                         consequence.type,
                         consequence.amount,
                         consequence.label,
                         activeDate,
-                        currentSession === 'general' ? null : currentSession
+                        currentSession
                     );
                     await applyConsequence(
                         profile.id,
@@ -78,18 +85,18 @@ function ConsequenceButtons({ profile, activeDate }) {
                         consequence.amount,
                         consequence.label,
                         activeDate,
-                        targetSession === 'general' ? null : targetSession
+                        finalTarget
                     );
                 }
             } else {
-                // Si no está aplicada -> Aplicamos a la sesión elegida
+                // Aplicar a la sesión final
                 await applyConsequence(
                     profile.id,
                     consequence.type,
                     consequence.amount,
                     consequence.label,
                     activeDate,
-                    targetSession === 'general' ? null : targetSession
+                    finalTarget
                 );
             }
         } catch (error) {
@@ -103,10 +110,6 @@ function ConsequenceButtons({ profile, activeDate }) {
             });
         }
     };
-
-    const plannedDays = profile.weeklyPlan ? Object.entries(profile.weeklyPlan)
-        .filter(([day, hours]) => hours > 0)
-        .map(([day]) => day) : [];
 
     const DAY_LABELS = {
         friday: 'Vie', saturday: 'Sáb', sunday: 'Dom', monday: 'Lun',
@@ -138,7 +141,7 @@ function ConsequenceButtons({ profile, activeDate }) {
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
                             <div
-                                onClick={() => handleToggle(consequence, isApplied ? currentSession : 'general')}
+                                onClick={() => handleToggle(consequence, isApplied ? currentSession : null)}
                                 style={{
                                     cursor: isProcessing ? 'wait' : 'pointer',
                                     display: 'flex',
@@ -157,7 +160,7 @@ function ConsequenceButtons({ profile, activeDate }) {
 
                             <div
                                 style={{ flex: 1, cursor: isProcessing ? 'wait' : 'pointer' }}
-                                onClick={() => handleToggle(consequence, isApplied ? currentSession : 'general')}
+                                onClick={() => handleToggle(consequence, isApplied ? currentSession : null)}
                             >
                                 <div style={{
                                     fontWeight: 700,
@@ -172,8 +175,8 @@ function ConsequenceButtons({ profile, activeDate }) {
                                 </div>
                                 <div style={{ fontSize: '12px', color: isApplied ? 'var(--color-danger)' : 'var(--text-muted)', opacity: 0.8 }}>
                                     {isApplied
-                                        ? `Penalización activa: ${currentSession === 'general' ? 'General' : DAY_LABELS[currentSession]}`
-                                        : 'Haz clic para aplicar penalización general'}
+                                        ? `Penalización activa en: ${DAY_LABELS[currentSession] || 'Saldo General'}`
+                                        : 'Haz clic para aplicar penalización'}
                                 </div>
                             </div>
 
@@ -199,9 +202,9 @@ function ConsequenceButtons({ profile, activeDate }) {
                                 alignItems: 'center'
                             }}>
                                 <span style={{ fontSize: '11px', fontWeight: 600, color: isApplied ? 'var(--color-danger)' : 'var(--text-muted)' }}>
-                                    {isApplied ? 'Cambiar sesión:' : 'O elegir sesión:'}
+                                    {isApplied ? 'Cambiar sesión:' : 'Elegir sesión específica:'}
                                 </span>
-                                {['general', ...plannedDays].map(day => {
+                                {plannedDays.map(day => {
                                     const isActive = currentSession === day;
                                     return (
                                         <button
@@ -221,7 +224,7 @@ function ConsequenceButtons({ profile, activeDate }) {
                                                 transition: 'all var(--transition-fast)'
                                             }}
                                         >
-                                            {day === 'general' ? 'Gral' : DAY_LABELS[day]}
+                                            {DAY_LABELS[day]}
                                         </button>
                                     );
                                 })}
