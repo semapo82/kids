@@ -358,10 +358,11 @@ export async function createProfile(profileData) {
         weeklyGoalProgress: 0,
         tasks: [
             ...(profileData.customTasks || []).map((task, index) => ({
-                id: `task_${index}`,
+                id: `task_${index}_${Date.now()}`,
                 name: task.name,
-                points: task.points || 5,
-                completedToday: false
+                points: Math.max(1, parseInt(task.points) || 5),
+                completedToday: false,
+                isManual: task.isManual || false
             })),
             {
                 id: 'breathing',
@@ -370,6 +371,11 @@ export async function createProfile(profileData) {
                 completedToday: false
             }
         ],
+        consequences: profileData.consequences || [],
+        weeklyPlan: profileData.weeklyPlan || {
+            friday: 0, saturday: 0, sunday: 0, monday: 0,
+            tuesday: 0, wednesday: 0, thursday: 0
+        },
         createdAt: new Date().toISOString()
     };
 
