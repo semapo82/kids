@@ -12,7 +12,11 @@ function ProfileForm() {
         name: '',
         weeklyGoalHours: 0,
         customTasks: [],
-        consequences: []
+        consequences: [],
+        weeklyPlan: {
+            friday: 0, saturday: 0, sunday: 0, monday: 0,
+            tuesday: 0, wednesday: 0, thursday: 0
+        }
     });
     const [loading, setLoading] = useState(isEdit);
 
@@ -32,7 +36,11 @@ function ProfileForm() {
                         consequences: (profile.consequences || getDefaultConsequences()).map(c => ({
                             ...c,
                             color: c.color === '#dc2626' ? 'var(--color-danger)' : c.color
-                        }))
+                        })),
+                        weeklyPlan: profile.weeklyPlan || {
+                            friday: 0, saturday: 0, sunday: 0, monday: 0,
+                            tuesday: 0, wednesday: 0, thursday: 0
+                        }
                     });
                 }
                 setLoading(false);
@@ -61,6 +69,14 @@ function ProfileForm() {
             return;
         }
 
+        // Validate weekly plan sum matches weeklyGoalHours
+        const totalPlanned = Object.values(formData.weeklyPlan).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+        if (totalPlanned !== parseFloat(formData.weeklyGoalHours)) {
+            if (!window.confirm(`La suma de las sesiones (${totalPlanned}h) no coincide con la meta semanal (${formData.weeklyGoalHours}h). ¿Deseas continuar de todas formas?`)) {
+                return;
+            }
+        }
+
         if (isEdit) {
             // Get the current profile to preserve the breathing task
             const currentProfile = await getProfile(id);
@@ -81,7 +97,8 @@ function ProfileForm() {
                 name: formData.name,
                 weeklyGoalHours: formData.weeklyGoalHours,
                 tasks: updatedTasks,
-                consequences: formData.consequences
+                consequences: formData.consequences,
+                weeklyPlan: formData.weeklyPlan
             });
         } else {
             await createProfile(formData);
@@ -130,6 +147,16 @@ function ProfileForm() {
     const removeConsequence = (index) => {
         const updated = formData.consequences.filter((_, i) => i !== index);
         setFormData({ ...formData, consequences: updated });
+    };
+
+    const updateWeeklyPlan = (day, value) => {
+        setFormData({
+            ...formData,
+            weeklyPlan: {
+                ...formData.weeklyPlan,
+                [day]: parseFloat(value) || 0
+            }
+        });
     };
 
     const calculateAutomaticTimes = () => {
@@ -225,6 +252,40 @@ function ProfileForm() {
                         <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)' }}>
                             Horas que quiere acumular esta semana
                         </small>
+                    </div>
+
+                    {/* Weekly Distribution (Sessions) */}
+                    <div style={{ marginBottom: 'var(--spacing-lg)', padding: 'var(--spacing-md)', background: 'rgba(99, 102, 241, 0.05)', borderRadius: 'var(--border-radius-sm)', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                        <label className="label">Planificación de Gasto (Sesiones)</label>
+                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
+                            Distribuye la meta de {formData.weeklyGoalHours}h en los días que se suele gastar el tiempo (ej: 3h viernes, 3h sábado):
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 'var(--spacing-sm)' }}>
+                            {['friday', 'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'].map(day => (
+                                <div key={day}>
+                                    <label className="label" style={{ fontSize: '10px', textTransform: 'uppercase', marginBottom: '2px', opacity: 0.8 }}>
+                                        {day === 'friday' ? 'Viernes' :
+                                            day === 'saturday' ? 'Sábado' :
+                                                day === 'sunday' ? 'Domingo' :
+                                                    day === 'monday' ? 'Lunes' :
+                                                        day === 'tuesday' ? 'Martes' :
+                                                            day === 'wednesday' ? 'Miércoles' : 'Jueves'}
+                                    </label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <input
+                                            type="number"
+                                            className="input"
+                                            style={{ padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: 'var(--font-size-sm)' }}
+                                            value={formData.weeklyPlan[day]}
+                                            onChange={(e) => updateWeeklyPlan(day, e.target.value)}
+                                            min="0"
+                                            step="0.5"
+                                        />
+                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>h</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Custom Tasks */}

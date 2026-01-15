@@ -8,6 +8,7 @@ import ConsequenceButtons from './ConsequenceButtons';
 import BankingModule from './BankingModule';
 import ActivityFeed from './ActivityFeed';
 import HistoryChart from './HistoryChart';
+import WeeklySessions from './WeeklySessions';
 import { formatDate, isSameDay, isFutureDate } from '../utils/dateUtils';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -147,6 +148,9 @@ function ProfileDetail() {
                     </button>
                 </div>
             </div>
+
+            {/* Weekly Sessions Plan */}
+            <WeeklySessions profile={profile} />
 
             {/* Main Grid */}
             <div style={{

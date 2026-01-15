@@ -602,13 +602,14 @@ export async function addInitiative(profileId, description, date = new Date()) {
     });
 }
 
-export async function applyConsequence(profileId, consequenceType, amount, description, date = new Date()) {
+export async function applyConsequence(profileId, consequenceType, amount, description, date = new Date(), targetSession = null) {
     return await addTransaction({
         profileId,
         type: 'consequence',
         amount: -Math.abs(amount), // Ensure negative
-        description: `Consecuencia: ${description}`,
-        consequenceType, // Reusamos taskId logicamente para identificar la consecuencia
+        description: `Consecuencia: ${description}${targetSession ? ` (Afecta a: ${targetSession})` : ''}`,
+        consequenceType,
+        targetSession, // e.g., 'friday', 'saturday'
         timestamp: date.toISOString()
     });
 }
@@ -616,13 +617,14 @@ export async function applyConsequence(profileId, consequenceType, amount, descr
 /**
  * Undo a consequence (Uncheck)
  */
-export async function undoConsequence(profileId, consequenceType, amount, description, date = new Date()) {
+export async function undoConsequence(profileId, consequenceType, amount, description, date = new Date(), targetSession = null) {
     return await addTransaction({
         profileId,
         type: 'consequence_reversal',
         amount: Math.abs(amount), // Positive to cancel out penalty
-        description: `Consecuencia anulada: ${description}`,
+        description: `Consecuencia anulada: ${description}${targetSession ? ` (Afecta a: ${targetSession})` : ''}`,
         consequenceType,
+        targetSession,
         timestamp: date.toISOString()
     });
 }
