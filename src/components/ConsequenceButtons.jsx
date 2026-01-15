@@ -37,7 +37,8 @@ function ConsequenceButtons({ profile, activeDate }) {
 
         if (netBalance <= 0) return null;
 
-        const lastRecord = [...entriesOnDate].reverse().find(tx => tx.type === 'consequence');
+        // Find the LATEST consequence record to see its targetSession
+        const lastRecord = entriesOnDate.find(tx => tx.type === 'consequence');
         return lastRecord?.targetSession || 'general';
     };
 
@@ -138,7 +139,12 @@ function ConsequenceButtons({ profile, activeDate }) {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
                             <div
                                 onClick={() => handleToggle(consequence, isApplied ? currentSession : 'general')}
-                                style={{ cursor: isProcessing ? 'wait' : 'pointer', display: 'flex', alignItems: 'center' }}
+                                style={{
+                                    cursor: isProcessing ? 'wait' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    paddingRight: 'var(--spacing-sm)'
+                                }}
                             >
                                 {isProcessing ? (
                                     <Loader2 size={24} className="animate-spin" color="var(--color-danger)" />
@@ -150,8 +156,8 @@ function ConsequenceButtons({ profile, activeDate }) {
                             </div>
 
                             <div
-                                style={{ flex: 1, cursor: 'default' }}
-                                onClick={() => !isApplied && handleToggle(consequence, 'general')}
+                                style={{ flex: 1, cursor: isProcessing ? 'wait' : 'pointer' }}
+                                onClick={() => handleToggle(consequence, isApplied ? currentSession : 'general')}
                             >
                                 <div style={{
                                     fontWeight: 700,

@@ -16,6 +16,7 @@ import {
     orderBy,
     limit as firestoreLimit,
     serverTimestamp,
+    increment,
     collectionGroup
 } from 'firebase/firestore';
 
@@ -426,13 +427,12 @@ export async function deleteProfile(id) {
             await deleteDoc(txDoc.ref);
         }
     } else {
-        const profiles = await getProfiles();
-        const filtered = profiles.filter(p => p.id !== id);
-        await saveProfiles(filtered);
-
         const transactions = await getTransactions();
         const filteredTransactions = transactions.filter(t => t.profileId !== id);
         await saveTransactions(filteredTransactions);
+        const profiles = await getProfiles();
+        const filtered = profiles.filter(p => p.id !== id);
+        await saveProfiles(filtered);
     }
 }
 
@@ -536,12 +536,16 @@ export async function addTransaction(transaction, skipProfileUpdate = false) {
     }
 
     if (!skipProfileUpdate) {
-        const profile = await getProfile(transaction.profileId);
-        if (profile) {
-            const amount = Number(transaction.amount);
-            const newBalance = Number(profile.balance || 0) + amount;
-            console.log(`Updating balance for ${profile.name}: ${profile.balance} -> ${newBalance} (amount: ${amount})`);
-            await updateProfile(profile.id, { balance: newBalance });
+        const amount = Number(transaction.amount);
+        if (currentUser && currentFamilyId) {
+            const profileRef = doc(db, 'families', currentFamilyId, 'profiles', transaction.profileId);
+            await setDoc(profileRef, { balance: increment(amount) }, { merge: true });
+        } else {
+            const profile = await getProfile(transaction.profileId);
+            if (profile) {
+                const newBalance = Number(profile.balance || 0) + amount;
+                await updateProfile(profile.id, { balance: newBalance });
+            }
         }
     }
 
