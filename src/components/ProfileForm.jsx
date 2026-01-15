@@ -147,16 +147,17 @@ function ProfileForm() {
             return;
         }
 
-        // Count tasks that are not manual (including breathing task)
+        // Count only custom tasks that are not manual (breathing task is excluded, it's a bonus)
         const automaticTasks = formData.customTasks.filter(t => !t.isManual);
-        const totalAutomaticTasks = automaticTasks.length + 1; // +1 for breathing task
+        const totalAutomaticTasks = automaticTasks.length;
 
         if (totalAutomaticTasks === 0) {
             alert('Todas las tareas están marcadas como manuales. No hay nada que calcular.');
             return;
         }
 
-        // Calculate points per task: (weeklyGoal - initialBalance) / (tasks * 7 days)
+        // Calculate points per task: (weeklyGoal - initialBalance) / (custom tasks * 7 days)
+        // Note: Breathing task (5 min) is NOT included, it's considered a bonus
         const pointsPerTask = Math.round(minutesToEarn / (totalAutomaticTasks * 7));
 
         // Update automatic tasks
@@ -169,7 +170,7 @@ function ProfileForm() {
 
         setFormData({ ...formData, customTasks: updatedTasks });
 
-        alert(`Tiempos calculados automáticamente: ${pointsPerTask} minutos por tarea\n\nCálculo:\nMeta semanal: ${formData.weeklyGoalHours}h = ${weeklyGoalMinutes} min\nMenos hora gratis: -${INITIAL_BALANCE} min\nA ganar con tareas: ${minutesToEarn} min\nTareas automáticas: ${totalAutomaticTasks}\nDías: 7\nResultado: ${minutesToEarn} / ${totalAutomaticTasks} / 7 = ${pointsPerTask} min/tarea`);
+        alert(`Tiempos calculados automáticamente: ${pointsPerTask} minutos por tarea\n\nCálculo:\nMeta semanal: ${formData.weeklyGoalHours}h = ${weeklyGoalMinutes} min\nMenos hora gratis: -${INITIAL_BALANCE} min\nA ganar con tareas: ${minutesToEarn} min\nTareas automáticas: ${totalAutomaticTasks} (respiración NO incluida, es un extra)\nDías: 7\nResultado: ${minutesToEarn} / ${totalAutomaticTasks} / 7 = ${pointsPerTask} min/tarea`);
     };
 
     if (loading) {
