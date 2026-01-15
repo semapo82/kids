@@ -602,15 +602,26 @@ export async function addInitiative(profileId, description, date = new Date()) {
     });
 }
 
-/**
- * Apply consequence
- */
 export async function applyConsequence(profileId, consequenceType, amount, description, date = new Date()) {
     return await addTransaction({
         profileId,
         type: 'consequence',
         amount: -Math.abs(amount), // Ensure negative
         description: `Consecuencia: ${description}`,
+        consequenceType, // Reusamos taskId logicamente para identificar la consecuencia
+        timestamp: date.toISOString()
+    });
+}
+
+/**
+ * Undo a consequence (Uncheck)
+ */
+export async function undoConsequence(profileId, consequenceType, amount, description, date = new Date()) {
+    return await addTransaction({
+        profileId,
+        type: 'consequence_reversal',
+        amount: Math.abs(amount), // Positive to cancel out penalty
+        description: `Consecuencia anulada: ${description}`,
         consequenceType,
         timestamp: date.toISOString()
     });
