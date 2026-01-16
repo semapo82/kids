@@ -36,10 +36,10 @@ function LoginButton() {
                     onClick={logout}
                     className="btn btn-sm btn-secondary"
                     title="Cerrar sesión"
-                    style={{ padding: '6px 12px' }}
+                    style={{ padding: '6px 8px' }}
                 >
                     <LogOut size={16} />
-                    <span style={{ marginLeft: '6px' }}>Salir</span>
+                    <span className="hide-mobile" style={{ marginLeft: '6px' }}>Salir</span>
                 </button>
             </div>
         );
@@ -49,10 +49,10 @@ function LoginButton() {
         <button
             onClick={loginWithGoogle}
             className="btn btn-sm btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', padding: '6px 8px' }}
         >
             <LogIn size={18} />
-            <span>Sincronizar</span>
+            <span className="hide-mobile">Sincronizar</span>
         </button>
     );
 }

@@ -300,9 +300,38 @@ body {
     padding: var(--spacing-sm);
   }
 
+  .card {
+    padding: var(--spacing-md);
+  }
+
   :root {
-    --font-size-3xl: 1.75rem;
-    --font-size-4xl: 2rem;
+    --font-size-3xl: 1.5rem;
+    --font-size-4xl: 1.75rem;
+    --spacing-xl: 1.25rem;
+    --spacing-lg: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 8px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-grid-2 {
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -335,4 +364,20 @@ body {
   font-size: var(--font-size-lg);
   box-shadow: var(--shadow-xl);
   z-index: 10;
+}
+
+@media (max-width: 360px) {
+  :root {
+    --font-size-base: 0.9375rem;
+    --font-size-sm: 0.8125rem;
+    --spacing-md: 0.75rem;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 1.25rem !important;
+  }
 }

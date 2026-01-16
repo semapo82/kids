@@ -260,7 +260,7 @@ function ProfileForm() {
                         <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
                             Distribuye la meta de {formData.weeklyGoalHours}h en los días que se suele gastar el tiempo (ej: 3h viernes, 3h sábado):
                         </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 'var(--spacing-sm)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 'var(--spacing-xs)' }}>
                             {['friday', 'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'].map(day => (
                                 <div key={day}>
                                     <label className="label" style={{ fontSize: '10px', textTransform: 'uppercase', marginBottom: '2px', opacity: 0.8 }}>

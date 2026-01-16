@@ -67,18 +67,18 @@ function ProfileDetail() {
     return (
         <div className="fade-in">
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)', gap: 'var(--spacing-sm)' }} className="mobile-stack">
                 <button onClick={() => navigate('/')} className="btn btn-secondary">
                     <ArrowLeft size={20} />
-                    Volver
+                    <span className="hide-mobile">Volver</span>
                 </button>
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <Link to={`/edit-profile/${id}`} className="btn btn-secondary">
-                        <Edit size={20} />
+                    <Link to={`/edit-profile/${id}`} className="btn btn-secondary" style={{ flex: 1 }}>
+                        <Edit size={18} />
                         Editar
                     </Link>
-                    <button onClick={handleDelete} className="btn btn-danger">
-                        <Trash2 size={20} />
+                    <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1 }}>
+                        <Trash2 size={18} />
                         Eliminar
                     </button>
                 </div>

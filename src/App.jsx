@@ -19,21 +19,28 @@ function AppContent() {
       <header className="header shadow-sm">
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-            <Home className="text-primary" />
-            <h1 style={{ fontSize: 'var(--font-size-xl)', margin: 0, background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Aprendizaje por Refuerzo
+            <Home className="text-primary" size={20} />
+            <h1 style={{
+              fontSize: 'clamp(1rem, 4vw, 1.25rem)',
+              margin: 0,
+              background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              whiteSpace: 'nowrap'
+            }}>
+              Aprendizaje
             </h1>
           </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
             {user && (
               <Link to="/family-settings" className="btn btn-icon btn-secondary" title="Configuración de Familia" style={{ display: 'flex', padding: '8px' }}>
-                <Settings size={20} />
+                <Settings size={18} />
               </Link>
             )}
             <LoginButton />
-            <Link to="/new-profile" className="btn btn-primary">
-              <Plus size={20} />
-              <span>Nuevo Perfil</span>
+            <Link to="/new-profile" className="btn btn-primary" style={{ padding: '8px' }}>
+              <Plus size={18} />
+              <span className="hide-mobile">Perfil</span>
             </Link>
           </div>
         </div>

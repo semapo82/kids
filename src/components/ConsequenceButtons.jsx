@@ -126,13 +126,16 @@ function ConsequenceButtons({ profile, activeDate }) {
 
                         {/* Session Checkboxes */}
                         {plannedDays.length > 0 ? (
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-                                gap: 'var(--spacing-sm)',
-                                paddingTop: 'var(--spacing-md)',
-                                borderTop: '1px solid var(--border-color)'
-                            }}>
+                            <div
+                                className="mobile-grid-2"
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(65px, 1fr))',
+                                    gap: 'var(--spacing-xs)',
+                                    paddingTop: 'var(--spacing-md)',
+                                    borderTop: '1px solid var(--border-color)'
+                                }}
+                            >
                                 {plannedDays.map(day => {
                                     const key = `${consequence.type}-${day}`;
                                     const isApplied = isSessionApplied(consequence.type, day);

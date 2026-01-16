@@ -52,7 +52,7 @@ function WeeklySessions({ profile }) {
                 <h3 style={{ fontSize: 'var(--font-size-xl)' }}>Plan de Sesiones Semanal</h3>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--spacing-sm)' }}>
                 {plannedDays.map(([dayKey, hours]) => {
                     const stats = calculateSessionStats(dayKey);
                     const percentage = (stats.available / stats.planned) * 100;
