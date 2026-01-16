@@ -1,22 +1,25 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>kids</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      // Early error catcher for mobile debugging
-      window.onerror = function(msg, url, line, col, error) {
-        var alertMsg = "Error: " + msg + "\nURL: " + url + "\nLine: " + line;
-        alert(alertMsg);
-        return false;
-      };
-      console.log("Starting App...");
-    </script>
-    <script type="module" src="./src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kids</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    // Early error catcher for mobile debugging
+    window.onerror = function (msg, url, line, col, error) {
+      var alertMsg = "Error: " + msg + "\nURL: " + url + "\nLine: " + line;
+      alert(alertMsg);
+      return false;
+    };
+    console.log("Starting App...");
+  </script>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
