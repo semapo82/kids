@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/kids/', // GitHub Pages base path
+  base: './', // Relative path for compatibility with GitHub Pages and Capacitor
 })
