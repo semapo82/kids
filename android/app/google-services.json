@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "483987459546",
+    "firebase_url": "https://kids-138fe-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "kids-138fe",
+    "storage_bucket": "kids-138fe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483987459546:android:625c758a018a0ff35584e3",
+        "android_client_info": {
+          "package_name": "com.semapo82.kids"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "483987459546-5s64grguqrunsd7uekqjpiaim3ne6i6i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.semapo82.kids",
+            "certificate_hash": "255e6a2b482d5a9f68621cf9aebfa7162f0b5830"
+          }
+        },
+        {
+          "client_id": "483987459546-gl8vlvq35gi2q4clhtm3n83os1t71rvh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAz7aey9rvDe6Ueq6Sq0YaLAhKJDhsKm-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "483987459546-gl8vlvq35gi2q4clhtm3n83os1t71rvh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
