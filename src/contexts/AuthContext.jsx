@@ -54,9 +54,12 @@ export function AuthProvider({ children }) {
                 console.log("Iniciando login nativo...");
                 const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
 
-                const googleUser = await GoogleAuth.signIn().catch(err => {
+                const googleUser = await GoogleAuth.signIn({
+                    clientId: '483987459546-gl8vlvq35gi2q4clhtm3n83os1t71rvh.apps.googleusercontent.com'
+                }).catch(err => {
                     console.error("Nativo SignIn Error:", err);
-                    alert("Error nativo: " + (err.code || err.message || JSON.stringify(err)));
+                    const code = err.code || (err.message && err.message.includes('10') ? '10' : '');
+                    alert("Error nativo " + code + ": " + (err.message || JSON.stringify(err)));
                     throw err;
                 });
 
