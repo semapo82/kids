@@ -53,7 +53,16 @@ export function AuthProvider({ children }) {
             if (isCapacitor) {
                 console.log("Iniciando login nativo...");
                 const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
-                const googleUser = await GoogleAuth.signIn();
+
+                const googleUser = await GoogleAuth.signIn().catch(err => {
+                    console.error("Nativo SignIn Error:", err);
+                    alert("Error nativo: " + (err.code || err.message || JSON.stringify(err)));
+                    throw err;
+                });
+
+                if (!googleUser?.authentication?.idToken) {
+                    throw new Error("No se recibió el token de Google.");
+                }
 
                 // Convert native credential to Firebase credential
                 const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
@@ -66,7 +75,8 @@ export function AuthProvider({ children }) {
             console.error("Login failed:", error);
             // Don't alert if user just cancelled
             if (error.message !== 'User cancelled') {
-                alert("Error de Login: " + error.message);
+                const detail = error.code ? ` (${error.code})` : '';
+                alert("Error de Login: " + error.message + detail);
             }
             throw error;
         }
