@@ -51,15 +51,13 @@ export function AuthProvider({ children }) {
             const isCapacitor = window.hasOwnProperty('Capacitor');
 
             if (isCapacitor) {
-                console.log("Iniciando login nativo...");
                 const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
 
                 const googleUser = await GoogleAuth.signIn().catch(err => {
-                    console.error("Nativo SignIn Error:", err);
-                    const rawError = JSON.stringify(err);
-                    const isTen = rawError.includes('10') || (err.code === 10);
-                    const codeLabel = isTen ? "10 (Developer Error)" : (err.code || "N/A");
-                    alert("Error nativo " + codeLabel + "\n\nEste error suele ser por la huella SHA-1. Revisa que coincida en Google Cloud.");
+                    const errorStr = JSON.stringify(err);
+                    if (!errorStr.includes('-1') && !errorStr.toLowerCase().includes('cancel')) {
+                        alert("No se pudo iniciar sesión con Google.");
+                    }
                     throw err;
                 });
 

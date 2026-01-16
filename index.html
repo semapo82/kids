@@ -10,15 +10,6 @@
 
 <body>
   <div id="root"></div>
-  <script>
-    // Early error catcher for mobile debugging
-    window.onerror = function (msg, url, line, col, error) {
-      var alertMsg = "Error: " + msg + "\nURL: " + url + "\nLine: " + line;
-      alert(alertMsg);
-      return false;
-    };
-    console.log("Starting App...");
-  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 
