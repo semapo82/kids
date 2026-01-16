@@ -4,4 +4,5 @@
     <string name="title_activity_main">Kids App</string>
     <string name="package_name">com.semapo82.kids</string>
     <string name="custom_url_scheme">com.semapo82.kids</string>
+    <string name="google_login_client_id">483987459546-gl8vlvq35gi2q4clhtm3n83os1t71rvh.apps.googleusercontent.com</string>
 </resources>
