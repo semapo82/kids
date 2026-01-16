@@ -1,5 +1,15 @@
 {
   "appId": "com.semapo82.kids",
   "appName": "Kids App",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": [
+        "profile",
+        "email"
+      ],
+      "serverClientId": "483987459546-gl8vlvq35gi2q4clhtm3n83os1t71rvh.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
 }

@@ -51,15 +51,23 @@ export function AuthProvider({ children }) {
             const isCapacitor = window.hasOwnProperty('Capacitor');
 
             if (isCapacitor) {
-                alert("Redirigiendo a Google para inicio de sesión seguro...");
-                const { signInWithRedirect } = await import('firebase/auth');
-                await signInWithRedirect(auth, googleProvider);
+                console.log("Iniciando login nativo...");
+                const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
+                const googleUser = await GoogleAuth.signIn();
+
+                // Convert native credential to Firebase credential
+                const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+                const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+                await signInWithCredential(auth, credential);
             } else {
                 await signInWithPopup(auth, googleProvider);
             }
         } catch (error) {
             console.error("Login failed:", error);
-            alert("Error de Login: " + error.message);
+            // Don't alert if user just cancelled
+            if (error.message !== 'User cancelled') {
+                alert("Error de Login: " + error.message);
+            }
             throw error;
         }
     };

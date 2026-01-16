@@ -64,6 +64,14 @@ function App() {
 
   useEffect(() => {
     console.log("App effect: initializing storage");
+
+    // Initialize Google Auth Nativo if in Capacitor
+    if (window.hasOwnProperty('Capacitor')) {
+      import('@codetrix-studio/capacitor-google-auth').then(mod => {
+        mod.GoogleAuth.initialize();
+      });
+    }
+
     initializeStorage()
       .then(() => {
         console.log("Storage initialized successfully");
