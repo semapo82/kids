@@ -13,7 +13,8 @@ function LoginButton() {
                         <img
                             src={user.photoURL}
                             alt={user.displayName}
-                            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--primary-color)' }}
+                            referrerPolicy="no-referrer"
+                            style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--color-primary)' }}
                         />
                     ) : (
                         <div style={{
