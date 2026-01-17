@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Copy, Check, LogIn } from 'lucide-react';
+import { ChevronLeft, Users, Copy, Check, Smartphone } from 'lucide-react';
 import { getActiveFamilyId, joinFamily } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -45,10 +45,14 @@ function FamilySettings() {
 
     if (!user) {
         return (
-            <div className="container" style={{ textAlign: 'center', paddingTop: '3rem' }}>
-                <h2>Inicia sesión para gestionar tu familia</h2>
-                <button onClick={() => navigate('/')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
-                    Volver al Dashboard
+            <div className="fade-in" style={{ paddingTop: '40vh', textAlign: 'center', padding: '0 20px' }}>
+                <h2 style={{ fontSize: '20px', marginBottom: '16px', color: 'var(--text-primary)' }}>Inicia sesión para gestionar tu familia</h2>
+                <button
+                    onClick={() => navigate('/')}
+                    className="btn-primary"
+                    style={{ background: 'var(--accent-primary)', color: 'white' }}
+                >
+                    Volver al Inicio
                 </button>
             </div>
         );
@@ -56,73 +60,148 @@ function FamilySettings() {
 
     return (
         <div className="fade-in">
-            <button onClick={() => navigate('/')} className="btn btn-secondary" style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <ArrowLeft size={20} />
-                Volver
-            </button>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <button
+                    onClick={() => navigate('/')}
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+            </div>
 
-            <h1 style={{ marginBottom: 'var(--spacing-xl)', fontSize: 'var(--font-size-3xl)' }}>
-                Configuración de Familia
-            </h1>
+            <h1 className="header-large">Sincronización</h1>
 
-            <div className="grid" style={{ gridTemplateColumns: '1fr', gap: 'var(--spacing-xl)' }}>
-                {/* My Family Code */}
-                <div className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
-                        <Users size={24} className="text-primary" />
-                        <h3 style={{ margin: 0 }}>Tu Código de Familia</h3>
+            {/* My Family Code Section */}
+            <div style={{ marginBottom: '32px' }}>
+                <span className="text-label" style={{ paddingLeft: '16px' }}>TU CÓDIGO ACTUAL</span>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            background: 'rgba(10, 132, 255, 0.15)',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent-primary)'
+                        }}>
+                            <Users size={20} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '15px', fontWeight: 600 }}>Familia Activa</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Comparte este código para sincronizar</div>
+                        </div>
                     </div>
-
-                    <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                        Comparte este código con otros familiares para que puedan ver y gestionar los mismos perfiles.
-                    </p>
 
                     <div style={{
-                        display: 'flex',
-                        gap: 'var(--spacing-sm)',
-                        background: 'var(--bg-secondary)',
-                        padding: 'var(--spacing-md)',
-                        borderRadius: 'var(--border-radius-sm)',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
+                        background: 'rgba(0,0,0,0.3)',
+                        padding: '16px',
+                        borderRadius: '10px',
+                        textAlign: 'center',
+                        fontFamily: 'monospace',
+                        fontSize: '16px',
+                        wordBreak: 'break-all',
+                        letterSpacing: '0.5px',
+                        fontWeight: 700,
+                        color: 'var(--accent-primary)'
                     }}>
-                        <code style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, color: 'var(--color-info)' }}>
-                            {familyId || 'Cargando...'}
-                        </code>
-                        <button onClick={handleCopy} className="btn btn-sm btn-secondary" disabled={!familyId}>
-                            {copied ? <Check size={16} /> : <Copy size={16} />}
-                            {copied ? 'Copiado' : 'Copiar'}
-                        </button>
+                        {familyId || 'Cargando...'}
                     </div>
+
+                    <button
+                        onClick={handleCopy}
+                        disabled={!familyId}
+                        style={{
+                            background: copied ? 'var(--accent-success)' : 'rgba(255,255,255,0.1)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            color: copied ? 'white' : 'var(--text-primary)',
+                            padding: '12px',
+                            fontSize: '15px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        {copied ? <Check size={18} /> : <Copy size={18} />}
+                        {copied ? 'Copiado al portapapeles' : 'Copiar Código'}
+                    </button>
                 </div>
+            </div>
 
-                {/* Join Family */}
+            {/* Join Family Section */}
+            <div>
+                <span className="text-label" style={{ paddingLeft: '16px' }}>UNIRSE A OTRA FAMILIA</span>
                 <div className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-lg)' }}>
-                        <LogIn size={24} className="text-success" />
-                        <h3 style={{ margin: 0 }}>Unirse a otra Familia</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                        <div style={{
+                            background: 'rgba(48, 209, 88, 0.15)',
+                            borderRadius: '50%',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent-success)'
+                        }}>
+                            <Smartphone size={20} />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '15px', fontWeight: 600 }}>Sincronizar Dispositivo</div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Ingresa el código de otro dispositivo</div>
+                        </div>
                     </div>
 
-                    <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                        Introduce el código de familia de otra persona para acceder a sus perfiles.
-                    </p>
-
-                    <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-                        <div className="form-group">
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Pega el código aquí..."
-                                value={newFamilyId}
-                                onChange={(e) => setNewFamilyId(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-primary" disabled={loading || !newFamilyId.trim()}>
-                            {loading ? 'Uniéndose...' : 'Unirse a Familia'}
+                    <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <input
+                            type="text"
+                            className="input"
+                            style={{ fontSize: '15px' }}
+                            placeholder="Pega el código aquí..."
+                            value={newFamilyId}
+                            onChange={(e) => setNewFamilyId(e.target.value)}
+                            required
+                        />
+                        <button
+                            type="submit"
+                            disabled={loading || !newFamilyId.trim()}
+                            style={{
+                                background: 'var(--accent-primary)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '12px',
+                                padding: '14px',
+                                fontSize: '17px',
+                                fontWeight: 600,
+                                width: '100%',
+                                cursor: loading ? 'default' : 'pointer',
+                                opacity: loading ? 0.7 : 1
+                            }}
+                        >
+                            {loading ? 'Sincronizando...' : 'Unirse ahora'}
                         </button>
                     </form>
                 </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', paddingLeft: '16px', marginTop: '8px', lineHeight: '1.4' }}>
+                    Al unirte, reemplazarás los datos actuales por los de la familia a la que te unes.
+                </p>
             </div>
         </div>
     );

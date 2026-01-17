@@ -263,9 +263,23 @@ function ProfileForm() {
         <div className="fade-in">
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '17px' }}>
-                    <ChevronLeft size={24} style={{ marginLeft: '-8px' }} /> ATRÁS
-                </div>
+                <button
+                    onClick={() => navigate('/')}
+                    style={{
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
             </div>
 
             <h1 className="header-large">{isEdit ? 'Editar Perfil' : 'Nuevo Perfil'}</h1>
@@ -278,7 +292,7 @@ function ProfileForm() {
                             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre</div>
                             <input
                                 className="input"
-                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '17px', width: '100%' }}
+                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '15px', width: '100%' }}
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="Nombre"
@@ -290,7 +304,7 @@ function ProfileForm() {
                             <input
                                 type="number"
                                 className="input"
-                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '17px', width: '100%' }}
+                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '15px', width: '100%' }}
                                 value={formData.weeklyGoalHours}
                                 onChange={(e) => setFormData({ ...formData, weeklyGoalHours: e.target.value })}
                                 placeholder="Ej: 5"
@@ -311,7 +325,7 @@ function ProfileForm() {
                                     placeholder="0"
                                     value={formData.weeklyPlan[key]}
                                     onChange={(e) => updateWeeklyPlan(key, e.target.value)}
-                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', padding: '6px', width: '60px', textAlign: 'center', fontSize: '17px' }}
+                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', padding: '6px', width: '60px', textAlign: 'center', fontSize: '15px' }}
                                 />
                             </div>
                         ))}
@@ -338,7 +352,7 @@ function ProfileForm() {
                                     value={task.name}
                                     onChange={(e) => updateTask(index, 'name', e.target.value)}
                                     placeholder="Nombre Tarea"
-                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '17px' }}
+                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '15px' }}
                                 />
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <input
@@ -372,7 +386,7 @@ function ProfileForm() {
                                     value={consequence.label}
                                     onChange={(e) => updateConsequence(index, 'label', e.target.value)}
                                     placeholder="Nombre"
-                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '17px' }}
+                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '15px' }}
                                 />
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <input

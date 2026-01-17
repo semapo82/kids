@@ -17,7 +17,7 @@ function ActivityFeed({ profileId }) {
             unsubscribeTransactions = subscribeToTransactions(profileId, (data) => {
                 setTransactions(data);
                 setLoading(false);
-            }, 5);
+            }, 50);
         });
         return () => {
             unsubscribeFamily();
@@ -39,7 +39,7 @@ function ActivityFeed({ profileId }) {
     };
 
     return (
-        <div style={{ padding: '0 16px' }}>
+        <div style={{ padding: '0 16px', overflowY: 'auto', maxHeight: '300px' }}>
             {transactions.map((tx, idx) => {
                 const Icon = getIcon(tx.type);
                 const isPositive = tx.amount > 0;

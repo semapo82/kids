@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, ChevronLeft, ChevronRight, Edit3 } from 'lucide-react';
 import { subscribeToProfile, deleteProfile, subscribeToFamilyChange } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import TaskChecklist from './TaskChecklist';
@@ -57,22 +57,39 @@ function ProfileDetail() {
     return (
         <div className="fade-in">
             {/* iOS Navigation Bar Wrapper */}
+            {/* iOS Navigation Bar Wrapper */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div
+                <button
                     onClick={() => navigate('/')}
                     style={{
-                        display: 'flex', alignItems: 'center', color: 'var(--accent-primary)', cursor: 'pointer',
-                        fontSize: '17px', fontWeight: 500
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer'
                     }}
                 >
-                    <ChevronLeft size={24} style={{ marginLeft: '-8px' }} />
-                    Atrás
-                </div>
-                {/* Replaced Edit/Delete buttons with a Link to Edit. Delete moves to inside Edit form usually, strictly speaking, 
-                    but user asked to keep functionality. I'll put Edit button here. Delete is accessible inside Form or rarely used.
-                    Actually, let's keep it simple. Just Edit button. */}
-                <Link to={`/edit-profile/${id}`} style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '17px' }}>
-                    Editar
+                    <ChevronLeft size={20} />
+                </button>
+
+                <Link to={`/edit-profile/${id}`} style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer'
+                }}>
+                    <Edit3 size={18} />
                 </Link>
             </div>
 
