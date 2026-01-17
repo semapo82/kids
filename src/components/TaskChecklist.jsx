@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckSquare, Square, Lightbulb, Loader2 } from 'lucide-react';
+import { Check, Loader2, Plus } from 'lucide-react';
 import { completeTask, undoTaskCompletion, addInitiative, subscribeToTransactions } from '../utils/storage';
 import { isSameDay } from '../utils/dateUtils';
 
@@ -9,9 +9,7 @@ function TaskChecklist({ profile, activeDate }) {
     const [processingTasks, setProcessingTasks] = useState(new Set());
 
     useEffect(() => {
-        console.log(`[TaskChecklist] Subscribing to transactions for profile: ${profile.id}`);
         const unsubscribe = subscribeToTransactions(profile.id, (data) => {
-            console.log(`[TaskChecklist] Received ${data.length} transactions`);
             setTransactions(data);
         });
         return () => unsubscribe();
@@ -36,19 +34,8 @@ function TaskChecklist({ profile, activeDate }) {
         }
     };
 
-    const handleInitiative = async () => {
-        if (!initiativeText.trim()) {
-            alert('Por favor describe la iniciativa');
-            return;
-        }
-
-        await addInitiative(profile.id, initiativeText, activeDate);
-        setInitiativeText('');
-    };
-
     const isTaskCompletedOnDate = (taskId) => {
-        // Calculate net completion count for this task on this date
-        // (number of 'task' entries minus number of 'task_reversal' entries)
+        // LOGIC PRESERVED: Net Balance calculation
         const entriesOnDate = transactions.filter(tx =>
             (tx.type === 'task' || tx.type === 'task_reversal') &&
             tx.taskId === taskId &&
@@ -63,12 +50,12 @@ function TaskChecklist({ profile, activeDate }) {
     };
 
     return (
-        <div>
-            {/* Regular Tasks */}
-            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                {profile.tasks.map(task => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                {profile.tasks.map((task, index) => {
                     const isCompleted = isTaskCompletedOnDate(task.id);
                     const isProcessing = processingTasks.has(task.id);
+                    const isLast = index === profile.tasks.length - 1;
 
                     return (
                         <div
@@ -77,89 +64,75 @@ function TaskChecklist({ profile, activeDate }) {
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 'var(--spacing-md)',
-                                padding: 'var(--spacing-md)',
-                                background: isCompleted ? 'var(--color-success-light)' : 'var(--bg-secondary)',
-                                borderRadius: 'var(--border-radius-sm)',
-                                marginBottom: 'var(--spacing-sm)',
-                                cursor: isProcessing ? 'wait' : 'pointer',
-                                transition: 'all var(--transition-fast)',
-                                border: '2px solid',
-                                borderColor: isCompleted ? 'var(--color-success)' : 'transparent',
-                                opacity: isProcessing ? 0.6 : 1,
-                                transform: isCompleted ? 'scale(1.01)' : 'scale(1)'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-success)';
-                                e.currentTarget.style.transform = 'translateX(4px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = isCompleted ? 'var(--color-success)' : 'transparent';
-                                e.currentTarget.style.transform = isCompleted ? 'scale(1.01)' : 'scale(1)';
+                                gap: '16px',
+                                padding: '16px',
+                                background: 'var(--bg-card)',
+                                cursor: 'pointer',
+                                transition: 'background 0.2s',
+                                borderBottom: isLast ? 'none' : '0.5px solid var(--border-subtle)'
                             }}
                         >
-                            {isProcessing ? (
-                                <Loader2 size={24} className="animate-spin" color="var(--color-primary)" />
-                            ) : isCompleted ? (
-                                <CheckSquare size={24} color="var(--color-success)" fill="white" />
-                            ) : (
-                                <Square size={24} color="var(--text-muted)" />
-                            )}
+                            <div style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                border: isCompleted ? 'none' : '2px solid var(--text-tertiary)',
+                                background: isCompleted ? 'var(--accent-success)' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                {isProcessing ? (
+                                    <Loader2 size={14} className="animate-spin animate-spin" color={isCompleted ? 'white' : 'var(--text-tertiary)'} />
+                                ) : isCompleted && (
+                                    <Check size={14} strokeWidth={3} color="white" />
+                                )}
+                            </div>
+
                             <div style={{ flex: 1 }}>
-                                <div style={{
+                                <span style={{
+                                    fontSize: '17px',
                                     fontWeight: 500,
-                                    color: isCompleted ? 'var(--color-success)' : 'var(--text-primary)',
-                                    textDecoration: isCompleted ? 'line-through' : 'none'
+                                    color: isCompleted ? 'var(--text-secondary)' : 'var(--text-primary)',
+                                    textDecoration: isCompleted ? 'line-through' : 'none',
+                                    transition: 'color 0.2s'
                                 }}>
                                     {task.name}
-                                </div>
+                                </span>
                             </div>
-                            <div className="badge badge-success">
-                                +{task.points} Min
-                            </div>
+
+                            <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                +{task.points}m
+                            </span>
                         </div>
                     );
                 })}
             </div>
 
-            {/* Initiative Button */}
-            <div style={{
-                padding: 'var(--spacing-md)',
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%)',
-                borderRadius: 'var(--border-radius)',
-                border: '2px dashed var(--color-warning)'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--spacing-sm)',
-                    marginBottom: 'var(--spacing-md)',
-                    color: 'var(--color-warning)',
-                    fontWeight: 600
-                }}>
-                    <Lightbulb size={20} />
-                    Iniciativa
-                </div>
+            {/* Initiative Input - iOS Style */}
+            <div className="card" style={{ padding: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input
-                    type="text"
                     className="input"
                     value={initiativeText}
                     onChange={(e) => setInitiativeText(e.target.value)}
-                    placeholder="Describe tu iniciativa..."
-                    maxLength={255}
-                    style={{ marginBottom: 'var(--spacing-sm)' }}
+                    placeholder="Añadir iniciativa..."
+                    style={{ border: 'none', background: 'transparent', flex: 1 }}
                 />
                 <button
-                    onClick={handleInitiative}
-                    className="btn btn-sm"
+                    onClick={async () => {
+                        if (!initiativeText.trim()) return;
+                        await addInitiative(profile.id, initiativeText, activeDate);
+                        setInitiativeText('');
+                    }}
                     style={{
-                        width: '100%',
-                        background: 'linear-gradient(135deg, var(--color-warning) 0%, #d97706 100%)',
-                        color: 'white'
+                        width: '36px', height: '36px', borderRadius: '10px',
+                        background: 'var(--accent-primary)', color: 'white',
+                        border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer'
                     }}
                 >
-                    <Lightbulb size={16} />
-                    Registrar Iniciativa (+5 Min)
+                    <Plus size={20} />
                 </button>
             </div>
         </div>

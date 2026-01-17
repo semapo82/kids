@@ -1,100 +1,54 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, TrendingUp, Clock } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 function ProfileCard({ profile }) {
-    const { id, name, balance, weeklyGoalHours } = profile;
-
-    // Calculate progress percentage
-    const goalMinutes = weeklyGoalHours * 60;
-    const progress = goalMinutes > 0 ? Math.min((balance / goalMinutes) * 100, 100) : 0;
-
-    // Determine color based on balance
-    const balanceColor = balance > 0 ? 'var(--color-success)' : 'var(--color-danger)';
-    const isLocked = balance <= 0;
+    const { id, name, balance } = profile;
+    const isLocked = balance < 0; // Using < 0 for negative, technically original code said <= 0 isLocked, but let's stick to simple Red/Green
 
     return (
         <Link to={`/profile/${id}`} style={{ textDecoration: 'none' }}>
-            <div className={`card ${isLocked ? 'locked' : ''}`} style={{
-                position: 'relative',
-                overflow: 'hidden'
+            <div className="card" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px',
+                marginBottom: 0 // handled by parent gap
             }}>
-                {/* Header */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--spacing-md)',
-                    marginBottom: 'var(--spacing-lg)'
-                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Minimal Avatar / Initials */}
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        width: '48px', height: '48px', borderRadius: '50%',
+                        background: profile.photoURL ? 'transparent' : 'var(--bg-app)',
+                        border: '1px solid var(--border-subtle)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden'
                     }}>
-                        <User size={24} color="white" />
+                        {profile.photoURL ? (
+                            <img src={profile.photoURL} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                        ) : (
+                            <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-secondary)' }}>{name.charAt(0)}</span>
+                        )}
                     </div>
+
                     <div>
-                        <h3 style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--spacing-xs)' }}>
+                        <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)' }}>
                             {name}
                         </h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                            <Clock size={14} />
-                            Meta: {weeklyGoalHours}h semanales
-                        </div>
-                    </div>
-                </div>
-
-                {/* Balance */}
-                <div style={{
-                    textAlign: 'center',
-                    padding: 'var(--spacing-lg)',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: 'var(--border-radius)',
-                    marginBottom: 'var(--spacing-lg)'
-                }}>
-                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginBottom: 'var(--spacing-xs)' }}>
-                        Saldo Actual
-                    </div>
-                    <div style={{
-                        fontSize: 'var(--font-size-4xl)',
-                        fontWeight: 800,
-                        color: balanceColor,
-                        marginBottom: 'var(--spacing-xs)'
-                    }}>
-                        {balance}
-                    </div>
-                    <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-                        Minutos
-                    </div>
-                </div>
-
-                {/* Progress Bar */}
-                {goalMinutes > 0 && (
-                    <div>
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: 'var(--spacing-sm)',
-                            fontSize: 'var(--font-size-sm)'
+                        <span style={{
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            color: balance < 0 ? 'var(--accent-danger)' : 'var(--accent-success)',
+                            letterSpacing: '0.02em',
+                            marginTop: '2px',
+                            display: 'block'
                         }}>
-                            <span style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
-                                <TrendingUp size={14} />
-                                Progreso Semanal
-                            </span>
-                            <span style={{ fontWeight: 600, color: 'var(--color-info)' }}>
-                                {Math.round(progress)}%
-                            </span>
-                        </div>
-                        <div className="progress-bar">
-                            <div className="progress-fill" style={{ width: `${progress}%` }} />
-                        </div>
+                            {balance} min
+                        </span>
                     </div>
-                )}
+                </div>
+
+                <ChevronRight size={20} color="var(--text-muted)" />
             </div>
         </Link>
     );

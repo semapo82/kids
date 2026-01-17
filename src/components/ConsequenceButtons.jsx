@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Home, Shield, Clock, CheckSquare, Square, Loader2 } from 'lucide-react';
+import { AlertTriangle, Home, Shield, Clock, Loader2 } from 'lucide-react';
 import { applyConsequence, undoConsequence, subscribeToTransactions } from '../utils/storage';
 import { isSameDay } from '../utils/dateUtils';
 
 const DEFAULT_CONSEQUENCES = [
-    { type: 'disrespect', label: 'Falta de respeto', amount: 15, icon: 'AlertTriangle', color: 'var(--color-danger)' },
-    { type: 'disorder', label: 'Desorden', amount: 5, icon: 'Home', color: 'var(--color-warning)' },
-    { type: 'trust', label: 'Confianza', amount: 30, icon: 'Shield', color: 'var(--color-danger)' },
-    { type: 'rules', label: 'Reglas Básicas', amount: 15, icon: 'Clock', color: 'var(--color-danger)' }
+    { type: 'disrespect', label: 'Respeto', amount: 15, icon: 'AlertTriangle' },
+    { type: 'disorder', label: 'Sin Orden', amount: 5, icon: 'Home' },
+    { type: 'trust', label: 'Confianza', amount: 30, icon: 'Shield' },
+    { type: 'rules', label: 'Normas', amount: 15, icon: 'Clock' }
 ];
 
 const ICON_MAP = { AlertTriangle, Home, Shield, Clock };
 
 function ConsequenceButtons({ profile, activeDate }) {
     const [transactions, setTransactions] = useState([]);
-    const [processingKeys, setProcessingKeys] = useState(new Set()); // Key: consequenceType-session
+    const [processingKeys, setProcessingKeys] = useState(new Set());
     const consequences = profile.consequences || DEFAULT_CONSEQUENCES;
 
     useEffect(() => {
@@ -31,8 +31,6 @@ function ConsequenceButtons({ profile, activeDate }) {
             tx.targetSession === session &&
             isSameDay(new Date(tx.timestamp), activeDate)
         );
-
-        // Sum amounts. If sum < 0, it's applied.
         return entriesOnDate.reduce((sum, tx) => sum + Number(tx.amount || 0), 0) < 0;
     };
 
@@ -45,33 +43,16 @@ function ConsequenceButtons({ profile, activeDate }) {
         if (processingKeys.has(key)) return;
 
         const isApplied = isSessionApplied(consequence.type, session);
-
         setProcessingKeys(prev => new Set(prev).add(key));
 
         try {
             if (isApplied) {
-                // UNDO for this specific day
-                await undoConsequence(
-                    profile.id,
-                    consequence.type,
-                    consequence.amount,
-                    consequence.label,
-                    activeDate,
-                    session
-                );
+                // UNDO
+                await undoConsequence(profile.id, consequence.type, consequence.amount, consequence.label, activeDate, session);
             } else {
-                // APPLY for this specific day
-                await applyConsequence(
-                    profile.id,
-                    consequence.type,
-                    consequence.amount,
-                    consequence.label,
-                    activeDate,
-                    session
-                );
+                // APPLY
+                await applyConsequence(profile.id, consequence.type, consequence.amount, consequence.label, activeDate, session);
             }
-        } catch (error) {
-            console.error("Error toggling consequence:", error);
         } finally {
             setProcessingKeys(prev => {
                 const next = new Set(prev);
@@ -82,103 +63,63 @@ function ConsequenceButtons({ profile, activeDate }) {
     };
 
     const DAY_LABELS = {
-        friday: 'Vie', saturday: 'Sáb', sunday: 'Dom', monday: 'Lun',
-        tuesday: 'Mar', wednesday: 'Mié', thursday: 'Jue'
+        friday: 'VI', saturday: 'SA', sunday: 'DO', monday: 'LU',
+        tuesday: 'MA', wednesday: 'MI', thursday: 'JU'
     };
 
+    const plannedDayKeys = Object.keys(DAY_LABELS).filter(day => plannedDays.includes(day));
+
+    if (consequences.length === 0) return null;
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {consequences.map(consequence => {
                 const Icon = ICON_MAP[consequence.icon] || AlertTriangle;
 
                 return (
-                    <div
-                        key={consequence.type}
-                        className="card"
-                        style={{
-                            padding: 'var(--spacing-md)',
-                            background: 'var(--bg-secondary)',
-                            transition: 'all var(--transition-base)',
-                            border: '1px solid var(--border-color)'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', marginBottom: 'var(--spacing-md)' }}>
-                            <div style={{
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                padding: '10px',
-                                borderRadius: '12px',
-                                color: 'var(--color-danger)'
-                            }}>
-                                <Icon size={24} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 700, fontSize: 'var(--font-size-lg)' }}>
-                                    {consequence.label}
+                    <div key={consequence.type} className="card" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ background: 'rgba(255, 69, 58, 0.15)', padding: '6px', borderRadius: '8px' }}>
+                                    <Icon size={18} color="var(--accent-danger)" />
                                 </div>
-                                <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                                    Penalización de {consequence.amount} min
-                                </div>
+                                <span style={{ fontWeight: 600, fontSize: '15px' }}>{consequence.label}</span>
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger)' }}>
-                                -{consequence.amount}
-                            </div>
+                            <span style={{ color: 'var(--accent-danger)', fontWeight: 600 }}>-{consequence.amount}m</span>
                         </div>
 
-                        {/* Session Checkboxes */}
-                        {plannedDays.length > 0 ? (
-                            <div
-                                className="mobile-grid-2"
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(65px, 1fr))',
-                                    gap: 'var(--spacing-xs)',
-                                    paddingTop: 'var(--spacing-md)',
-                                    borderTop: '1px solid var(--border-color)'
-                                }}
-                            >
-                                {plannedDays.map(day => {
-                                    const key = `${consequence.type}-${day}`;
+                        {/* Day Toggles */}
+                        {plannedDayKeys.length > 0 ? (
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                {plannedDayKeys.map(day => {
                                     const isApplied = isSessionApplied(consequence.type, day);
-                                    const isProcessing = processingKeys.has(key);
+                                    const isProcessing = processingKeys.has(`${consequence.type}-${day}`);
 
                                     return (
                                         <button
                                             key={day}
-                                            disabled={isProcessing}
                                             onClick={() => handleToggle(consequence, day)}
                                             style={{
-                                                padding: '10px 8px',
-                                                borderRadius: 'var(--border-radius-sm)',
-                                                border: '2px solid',
-                                                borderColor: isApplied ? 'var(--color-danger)' : 'var(--border-color)',
-                                                background: isApplied ? 'var(--color-danger-light)' : 'transparent',
-                                                color: isApplied ? 'var(--color-danger)' : 'var(--text-primary)',
-                                                cursor: isProcessing ? 'wait' : 'pointer',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '4px',
-                                                transition: 'all var(--transition-fast)',
-                                                opacity: isProcessing ? 0.6 : 1
+                                                flex: 1,
+                                                height: '32px',
+                                                background: isApplied ? 'var(--accent-danger)' : 'var(--bg-app)',
+                                                border: isApplied ? 'none' : '1px solid var(--border-subtle)',
+                                                borderRadius: '6px',
+                                                color: isApplied ? 'white' : 'var(--text-secondary)',
+                                                fontSize: '11px',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                                             }}
                                         >
-                                            <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.6 }}>
-                                                {DAY_LABELS[day]}
-                                            </span>
-                                            {isProcessing ? (
-                                                <Loader2 size={20} className="animate-spin" />
-                                            ) : isApplied ? (
-                                                <CheckSquare size={20} />
-                                            ) : (
-                                                <Square size={20} />
-                                            )}
+                                            {isProcessing ? <Loader2 size={12} className="animate-spin" /> : DAY_LABELS[day]}
                                         </button>
                                     );
                                 })}
                             </div>
                         ) : (
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', opacity: 0.7 }}>
-                                Configura sesiones en el perfil para aplicar consecuencias.
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                                Sin sesiones activas
                             </div>
                         )}
                     </div>

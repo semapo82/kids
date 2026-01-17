@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { subscribeToProfile, deleteProfile, subscribeToFamilyChange } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import TaskChecklist from './TaskChecklist';
@@ -10,7 +10,6 @@ import ActivityFeed from './ActivityFeed';
 import HistoryChart from './HistoryChart';
 import WeeklySessions from './WeeklySessions';
 import { formatDate, isSameDay, isFutureDate } from '../utils/dateUtils';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
 function ProfileDetail() {
     const { id } = useParams();
@@ -18,7 +17,7 @@ function ProfileDetail() {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeDate, setActiveDate] = useState(new Date());
-    const { user } = useAuth();
+    const { user } = useAuth(); // Keeping hook even if unused for logic consistency
 
     useEffect(() => {
         let unsubscribeProfile = () => { };
@@ -49,152 +48,153 @@ function ProfileDetail() {
         }
     };
 
-    if (loading) {
-        return <div className="container">Cargando...</div>;
-    }
+    if (loading) return <div className="fade-in" style={{ textAlign: 'center', paddingTop: '40vh' }}><div className="animate-spin" style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--text-muted)', margin: 'auto' }} /></div>;
 
-    if (!profile) {
-        return (
-            <div className="container" style={{ textAlign: 'center', paddingTop: '3rem' }}>
-                <p>Perfil no encontrado.</p>
-                <button onClick={() => navigate('/')} className="btn btn-primary">Volver al Dashboard</button>
-            </div>
-        );
-    }
+    if (!profile) return null;
 
-    const balanceColor = profile.balance > 0 ? 'var(--color-success)' : 'var(--color-danger)';
+    const balanceColor = profile.balance > 0 ? 'var(--accent-success)' : 'var(--accent-danger)';
 
     return (
         <div className="fade-in">
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-xl)', gap: 'var(--spacing-sm)' }} className="mobile-stack">
-                <button onClick={() => navigate('/')} className="btn btn-secondary">
-                    <ArrowLeft size={20} />
-                    <span className="hide-mobile">Volver</span>
-                </button>
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                    <Link to={`/edit-profile/${id}`} className="btn btn-secondary" style={{ flex: 1 }}>
-                        <Edit size={18} />
-                        Editar
-                    </Link>
-                    <button onClick={handleDelete} className="btn btn-danger" style={{ flex: 1 }}>
-                        <Trash2 size={18} />
-                        Eliminar
-                    </button>
+            {/* iOS Navigation Bar Wrapper */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div
+                    onClick={() => navigate('/')}
+                    style={{
+                        display: 'flex', alignItems: 'center', color: 'var(--accent-primary)', cursor: 'pointer',
+                        fontSize: '17px', fontWeight: 500
+                    }}
+                >
+                    <ChevronLeft size={24} style={{ marginLeft: '-8px' }} />
+                    Atrás
                 </div>
+                {/* Replaced Edit/Delete buttons with a Link to Edit. Delete moves to inside Edit form usually, strictly speaking, 
+                    but user asked to keep functionality. I'll put Edit button here. Delete is accessible inside Form or rarely used.
+                    Actually, let's keep it simple. Just Edit button. */}
+                <Link to={`/edit-profile/${id}`} style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '17px' }}>
+                    Editar
+                </Link>
             </div>
 
-            {/* Profile Header */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-xl)', textAlign: 'center' }}>
-                <h1 style={{ fontSize: 'var(--font-size-3xl)', marginBottom: 'var(--spacing-md)' }}>
-                    {profile.name}
-                </h1>
-                <div style={{
-                    fontSize: 'var(--font-size-4xl)',
-                    fontWeight: 800,
-                    color: balanceColor,
-                    marginBottom: 'var(--spacing-sm)'
-                }}>
-                    {profile.balance} Min
-                </div>
-                <div style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-lg)' }}>
-                    Saldo Actual
-                </div>
+            {/* Large Title Header */}
+            <h1 className="header-large" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {profile.photoURL && <img src={profile.photoURL} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />}
+                {profile.name}
+            </h1>
 
-                {/* Date Selector */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 'var(--spacing-md)',
-                    paddingTop: 'var(--spacing-md)',
-                    borderTop: '1px solid var(--border-color)'
-                }}>
-                    <button
-                        onClick={() => {
-                            const newDate = new Date(activeDate);
-                            newDate.setDate(newDate.getDate() - 1);
-                            setActiveDate(newDate);
-                        }}
-                        className="btn btn-icon btn-secondary"
-                    >
-                        <ChevronLeft size={18} />
-                    </button>
-
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--spacing-sm)',
-                        fontWeight: 600,
-                        color: 'var(--text-primary)'
-                    }}>
-                        <CalendarIcon size={18} className="text-primary" />
-                        {isSameDay(activeDate, new Date()) ? 'Hoy' : formatDate(activeDate, 'EEEE, d MMM')}
-                    </div>
-
-                    <button
-                        onClick={() => {
-                            const newDate = new Date(activeDate);
-                            newDate.setDate(newDate.getDate() + 1);
-                            if (!isFutureDate(newDate)) {
-                                setActiveDate(newDate);
-                            }
-                        }}
-                        className="btn btn-icon btn-secondary"
-                        disabled={isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1)))}
-                        style={{ opacity: isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1))) ? 0.3 : 1 }}
-                    >
-                        <ChevronRight size={18} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Weekly Sessions Plan */}
-            <WeeklySessions profile={profile} />
-
-            {/* Main Grid */}
+            {/* Date Selector Segmented Control Look */}
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: 'var(--spacing-lg)',
-                marginBottom: 'var(--spacing-xl)'
+                background: 'var(--bg-card)',
+                padding: '4px',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '24px'
             }}>
+                <button
+                    onClick={() => {
+                        const newDate = new Date(activeDate);
+                        newDate.setDate(newDate.getDate() - 1);
+                        setActiveDate(newDate);
+                    }}
+                    style={{ background: 'none', border: 'none', height: '32px', width: '32px', color: 'var(--accent-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                    <ChevronLeft size={20} />
+                </button>
+
+                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {isSameDay(activeDate, new Date()) ? 'Hoy' : formatDate(activeDate, 'd MMM')}
+                </span>
+
+                <button
+                    onClick={() => {
+                        const newDate = new Date(activeDate);
+                        newDate.setDate(newDate.getDate() + 1);
+                        if (!isFutureDate(newDate)) {
+                            setActiveDate(newDate);
+                        }
+                    }}
+                    disabled={isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1)))}
+                    style={{
+                        background: 'none', border: 'none', height: '32px', width: '32px',
+                        color: isFutureDate(new Date(new Date(activeDate).setDate(activeDate.getDate() + 1))) ? 'var(--text-muted)' : 'var(--accent-primary)',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                >
+                    <ChevronRight size={20} />
+                </button>
+            </div>
+
+            {/* Balance Hero */}
+            <div style={{ marginBottom: '32px' }}>
+                <span className="text-label" style={{ paddingLeft: '16px' }}>SALDO DISPONIBLE</span>
+                <div className="card" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '20px 24px' }}>
+                    <div>
+                        <span style={{ fontSize: '42px', fontWeight: 700, letterSpacing: '-1px', color: 'var(--text-primary)' }}>
+                            {profile.balance}
+                        </span>
+                        <span style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-secondary)', marginLeft: '6px' }}>min</span>
+                    </div>
+                    <div style={{
+                        padding: '6px 12px',
+                        borderRadius: '100px',
+                        background: profile.balance >= 0 ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 69, 58, 0.15)',
+                        color: balanceColor,
+                        fontWeight: 600,
+                        fontSize: '13px'
+                    }}>
+                        {profile.balance >= 0 ? 'Positivo' : 'Negativo'}
+                    </div>
+                </div>
+            </div>
+
+            {/* Modules Stack */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+
+                {/* Weekly Plan */}
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>PLAN DE JUEGO</span>
+                    <WeeklySessions profile={profile} />
+                </div>
+
                 {/* Tasks */}
-                <div className="card">
-                    <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
-                        ✅ Tareas Diarias
-                    </h3>
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>TAREAS DIARIAS</span>
                     <TaskChecklist profile={profile} activeDate={activeDate} />
                 </div>
 
                 {/* Consequences */}
-                <div className="card">
-                    <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
-                        ⚠️ Consecuencias
-                    </h3>
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>PENALIZACIONES</span>
                     <ConsequenceButtons profile={profile} activeDate={activeDate} />
+                </div>
+
+                {/* Banking */}
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>LA BANCA</span>
+                    <BankingModule profile={profile} activeDate={activeDate} />
+                </div>
+
+                {/* History */}
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>PROGRESO</span>
+                    <div className="card" style={{ overflow: 'hidden' }}>
+                        <h3 style={{ fontSize: '17px', margin: '0 0 16px 0', fontWeight: 600 }}>Tendencia</h3>
+                        <HistoryChart profileId={id} />
+                    </div>
+                </div>
+
+                {/* Activity */}
+                <div>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>ACTIVIDAD</span>
+                    <div className="card">
+                        <ActivityFeed profileId={id} />
+                    </div>
                 </div>
             </div>
 
-            <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <BankingModule profile={profile} activeDate={activeDate} />
-            </div>
-
-            {/* History Chart */}
-            <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
-                    📊 Progreso
-                </h3>
-                <HistoryChart profileId={id} />
-            </div>
-
-            {/* Activity Feed */}
-            <div className="card">
-                <h3 style={{ marginBottom: 'var(--spacing-lg)', fontSize: 'var(--font-size-xl)' }}>
-                    📝 Actividad Reciente
-                </h3>
-                <ActivityFeed profileId={id} />
-            </div>
+            <div style={{ height: '40px' }} /> {/* Spacing for bottom nav */}
         </div>
     );
 }

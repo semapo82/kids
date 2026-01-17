@@ -1,8 +1,8 @@
 import React from 'react';
-import { Coins, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { redeemTime } from '../utils/storage';
 
-function BankingModule({ profile, activeDate, onUpdate }) {
+function BankingModule({ profile, activeDate }) {
     const isLocked = (profile.balance || 0) <= 0;
 
     const handleRedeem = async (minutes) => {
@@ -14,85 +14,60 @@ function BankingModule({ profile, activeDate, onUpdate }) {
     };
 
     return (
-        <div className={`card ${isLocked ? 'locked' : ''}`}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--spacing-md)',
-                marginBottom: 'var(--spacing-lg)'
-            }}>
-                <Coins size={32} color="var(--color-info)" />
-                <div>
-                    <h3 style={{ fontSize: 'var(--font-size-xl)', marginBottom: 'var(--spacing-xs)' }}>
-                        🏦 La Banca
-                    </h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                        Canjea tus minutos acumulados
-                    </p>
-                </div>
-            </div>
-
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 'var(--spacing-md)'
-            }}>
-                {/* 1 Hour */}
+        <div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <button
                     onClick={() => handleRedeem(60)}
                     disabled={isLocked}
-                    className="btn btn-lg"
+                    className="card"
                     style={{
-                        flexDirection: 'column',
-                        padding: 'var(--spacing-xl)',
-                        background: 'linear-gradient(135deg, var(--color-info) 0%, #2563eb 100%)',
+                        padding: '20px',
+                        background: 'linear-gradient(135deg, #0A84FF 0%, #007AFF 100%)',
                         color: 'white',
-                        opacity: isLocked ? 0.5 : 1
+                        border: 'none',
+                        cursor: isLocked ? 'not-allowed' : 'pointer',
+                        opacity: isLocked ? 0.5 : 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        height: '120px'
                     }}
                 >
-                    <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 800, marginBottom: 'var(--spacing-sm)' }}>
-                        1 Hora
-                    </div>
-                    <div style={{ fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
-                        Canjear 60 Min
-                    </div>
+                    <span style={{ fontSize: '32px', fontWeight: 800 }}>60</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Minutos</span>
                 </button>
 
-                {/* 15 Minutes */}
                 <button
                     onClick={() => handleRedeem(15)}
                     disabled={isLocked}
-                    className="btn btn-lg"
+                    className="card"
                     style={{
-                        flexDirection: 'column',
-                        padding: 'var(--spacing-xl)',
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        padding: '20px',
+                        background: 'linear-gradient(135deg, #BF5AF2 0%, #AF52DE 100%)',
                         color: 'white',
-                        opacity: isLocked ? 0.5 : 1
+                        border: 'none',
+                        cursor: isLocked ? 'not-allowed' : 'pointer',
+                        opacity: isLocked ? 0.5 : 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        height: '120px'
                     }}
                 >
-                    <div style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 800, marginBottom: 'var(--spacing-sm)' }}>
-                        15 Min
-                    </div>
-                    <div style={{ fontSize: 'var(--font-size-sm)', opacity: 0.9 }}>
-                        Canjear 15 Min
-                    </div>
+                    <span style={{ fontSize: '32px', fontWeight: 800 }}>15</span>
+                    <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Minutos</span>
                 </button>
             </div>
 
             {isLocked && (
                 <div style={{
-                    marginTop: 'var(--spacing-lg)',
-                    padding: 'var(--spacing-md)',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    borderRadius: 'var(--border-radius-sm)',
-                    border: '1px solid var(--color-danger)',
-                    textAlign: 'center',
-                    color: 'var(--color-danger)',
-                    fontWeight: 600
+                    marginTop: '12px',
+                    padding: '12px',
+                    background: 'rgba(255, 69, 58, 0.15)',
+                    borderRadius: '12px',
+                    color: 'var(--accent-danger)',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                 }}>
-                    <Lock size={20} style={{ marginRight: 'var(--spacing-sm)' }} />
-                    Privilegios Suspendidos - Saldo insuficiente
+                    <Lock size={16} />
+                    <span>Privilegios Suspendidos</span>
                 </div>
             )}
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Plus, Settings } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import ProfileDetail from './components/ProfileDetail';
@@ -13,49 +13,72 @@ import './index.css';
 function AppContent() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getNavColor = (path) => {
+    return location.pathname === path ? 'var(--accent-primary)' : 'var(--text-muted)';
+  };
 
   return (
-    <div className="app">
-      <header className="header shadow-sm">
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-            <Home className="text-primary" size={20} />
-            <h1 style={{
-              fontSize: 'clamp(1rem, 4vw, 1.25rem)',
-              margin: 0,
-              background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-info) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              whiteSpace: 'nowrap'
-            }}>
-              Aprendizaje
-            </h1>
-          </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
-            {user && (
-              <Link to="/family-settings" className="btn btn-icon btn-secondary" title="Configuración de Familia" style={{ display: 'flex', padding: '8px' }}>
-                <Settings size={18} />
-              </Link>
-            )}
-            <LoginButton />
-            <Link to="/new-profile" className="btn btn-primary" style={{ padding: '8px' }}>
-              <Plus size={18} />
-              <span className="hide-mobile">Perfil</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+    <>
+      {/* Floating Profile/Login Button (Top Right Absolute) */}
+      <div style={{ position: 'fixed', top: 'calc(var(--safe-top) + 10px)', right: '20px', zIndex: 100 }}>
+        <LoginButton />
+      </div>
 
-      <main className="container" style={{ paddingTop: 'var(--spacing-xl)' }}>
+      <main className="app-container" style={{
+        paddingTop: 'calc(var(--safe-top) + 60px)',
+        paddingBottom: 'calc(var(--nav-height) + var(--safe-bottom) + 20px)',
+        paddingLeft: '20px',
+        paddingRight: '20px',
+        minHeight: '100vh',
+        maxWidth: '480px',
+        margin: '0 auto',
+        position: 'relative'
+      }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          {/* Note: keeping old routes /new-profile and /family-settings for compatibility, adding aliases just in case */}
           <Route path="/new-profile" element={<ProfileForm />} />
+          <Route path="/add-profile" element={<ProfileForm />} />
           <Route path="/edit-profile/:id" element={<ProfileForm />} />
           <Route path="/profile/:id" element={<ProfileDetail />} />
           <Route path="/family-settings" element={<FamilySettings />} />
+          <Route path="/settings" element={<FamilySettings />} />
         </Routes>
       </main>
-    </div>
+
+      {/* iOS Bottom Navigation */}
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        width: '100%',
+        height: 'calc(var(--nav-height) + var(--safe-bottom))',
+        background: 'rgba(28, 28, 30, 0.85)',
+        backdropFilter: 'blur(20px)',
+        borderTop: '0.5px solid rgba(255,255,255,0.1)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'flex-start',
+        paddingTop: '10px',
+        zIndex: 1000,
+        paddingBottom: 'var(--safe-bottom)'
+      }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <Home size={28} color={getNavColor('/')} />
+          <span style={{ fontSize: '10px', fontWeight: 500, color: getNavColor('/') }}>Inicio</span>
+        </button>
+        <button onClick={() => navigate('/new-profile')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <Plus size={28} color={getNavColor('/new-profile')} />
+          <span style={{ fontSize: '10px', fontWeight: 500, color: getNavColor('/new-profile') }}>Añadir</span>
+        </button>
+        <button onClick={() => navigate('/family-settings')} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <Settings size={28} color={getNavColor('/family-settings')} />
+          <span style={{ fontSize: '10px', fontWeight: 500, color: getNavColor('/family-settings') }}>Ajustes</span>
+        </button>
+      </nav>
+    </>
   );
 }
 
@@ -63,8 +86,6 @@ function App() {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    console.log("App effect: initializing storage");
-
     // Initialize Google Auth Nativo if in Capacitor
     if (window.hasOwnProperty('Capacitor')) {
       import('@codetrix-studio/capacitor-google-auth').then(mod => {
@@ -78,22 +99,14 @@ function App() {
 
     initializeStorage()
       .then(() => {
-        console.log("Storage initialized successfully");
         setInitialized(true);
       })
       .catch(err => {
         console.error("Initialization error:", err);
-        alert("Critial initialization error: " + err.message);
       });
   }, []);
 
-  if (!initialized) {
-    return (
-      <div style={{ padding: '20px', color: 'white', background: '#0f172a', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div>Cargando sistema...</div>
-      </div>
-    );
-  }
+  if (!initialized) return <div style={{ background: '#000', height: '100vh' }} />;
 
   return (
     <AuthProvider>

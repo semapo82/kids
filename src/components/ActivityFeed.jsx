@@ -11,7 +11,6 @@ function ActivityFeed({ profileId }) {
 
     useEffect(() => {
         let unsubscribeTransactions = () => { };
-
         const unsubscribeFamily = subscribeToFamilyChange(() => {
             setLoading(true);
             unsubscribeTransactions();
@@ -20,92 +19,44 @@ function ActivityFeed({ profileId }) {
                 setLoading(false);
             }, 5);
         });
-
         return () => {
             unsubscribeFamily();
             unsubscribeTransactions();
         };
     }, [profileId]);
 
-    if (loading) {
-        return <div style={{ textAlign: 'center', padding: 'var(--spacing-md)' }}>Cargando actividad...</div>;
-    }
-
-    if (transactions.length === 0) {
-        return (
-            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl)', color: 'var(--text-muted)' }}>
-                No hay actividad reciente
-            </div>
-        );
-    }
+    if (loading) return <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px' }}>Cargando actividad...</div>;
+    if (transactions.length === 0) return <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px' }}>Sin actividad reciente</div>;
 
     const getIcon = (type) => {
         switch (type) {
-            case 'task':
-            case 'initiative':
-                return TrendingUp;
-            case 'consequence':
-                return TrendingDown;
-            case 'redemption':
-                return Coins;
-            case 'reset':
-                return RotateCcw;
-            default:
-                return TrendingUp;
+            case 'task': case 'initiative': return TrendingUp;
+            case 'consequence': return TrendingDown;
+            case 'redemption': return Coins;
+            case 'reset': return RotateCcw;
+            default: return TrendingUp;
         }
     };
 
-    const getColor = (amount) => {
-        return amount > 0 ? 'var(--color-success)' : 'var(--color-danger)';
-    };
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
-            {transactions.map(tx => {
+        <div style={{ padding: '0 16px' }}>
+            {transactions.map((tx, idx) => {
                 const Icon = getIcon(tx.type);
-                const color = getColor(tx.amount);
+                const isPositive = tx.amount > 0;
+                const color = isPositive ? 'var(--accent-success)' : 'var(--accent-danger)';
 
                 return (
-                    <div
-                        key={tx.id}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--spacing-md)',
-                            padding: 'var(--spacing-md)',
-                            background: 'var(--bg-secondary)',
-                            borderRadius: 'var(--border-radius-sm)',
-                            borderLeft: `4px solid ${color}`
-                        }}
-                    >
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: `${color}22`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <Icon size={20} color={color} />
+                    <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 0', borderBottom: idx < transactions.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isPositive ? 'rgba(48, 209, 88, 0.15)' : 'rgba(255, 69, 58, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Icon size={16} color={color} />
                         </div>
-
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
-                                {tx.description}
-                            </div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)' }}>
-                                {formatDate(new Date(tx.timestamp), 'PPp')}
-                            </div>
+                            <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)' }}>{tx.description}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{formatDate(new Date(tx.timestamp), 'd MMM, HH:mm')}</div>
                         </div>
-
-                        <div style={{
-                            fontSize: 'var(--font-size-lg)',
-                            fontWeight: 700,
-                            color
-                        }}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount} Min
-                        </div>
+                        <span style={{ fontSize: '15px', fontWeight: 600, color: color }}>
+                            {isPositive ? '+' : ''}{tx.amount}
+                        </span>
                     </div>
                 );
             })}

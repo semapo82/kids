@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, AlertTriangle, Home, Shield, Clock, Plus, Trash2, Calculator } from 'lucide-react';
-import { createProfile, getProfile, updateProfile } from '../utils/storage';
+import { ChevronLeft, Calculator, Plus, Trash2 } from 'lucide-react';
+import { createProfile, getProfile, updateProfile, deleteProfile } from '../utils/storage';
 
 function ProfileForm() {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEdit = Boolean(id);
 
+    // Initial state uses empty strings to allow clean inputs for the user
     const [formData, setFormData] = useState({
         name: '',
         weeklyGoalHours: '',
@@ -33,7 +34,7 @@ function ProfileForm() {
                             points: t.points,
                             isManual: t.isManual || false
                         })) || [],
-                        consequences: (profile.consequences || getDefaultConsequences()).map(c => ({
+                        consequences: (profile.consequences || []).map(c => ({
                             ...c,
                             color: c.color === '#dc2626' ? 'var(--color-danger)' : c.color
                         })),
@@ -48,16 +49,27 @@ function ProfileForm() {
         }
     }, [id, isEdit]);
 
-    const getDefaultConsequences = () => [
-        { type: 'disrespect', label: 'Falta de respeto', amount: 15, icon: 'AlertTriangle', color: 'var(--color-danger)' },
-        { type: 'disorder', label: 'Desorden', amount: 5, icon: 'Home', color: 'var(--color-warning)' },
-        { type: 'trust', label: 'Confianza', amount: 30, icon: 'Shield', color: 'var(--color-danger)' },
-        { type: 'rules', label: 'Reglas Básicas', amount: 15, icon: 'Clock', color: 'var(--color-danger)' }
-    ];
-
+    // Ensure at least one empty task/consequence for new profiles for intuitiveness
     useEffect(() => {
-        if (!isEdit && formData.consequences.length === 0) {
-            setFormData(prev => ({ ...prev, consequences: getDefaultConsequences() }));
+        if (!isEdit) {
+            if (formData.customTasks.length === 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    customTasks: [{ name: '', points: '', isManual: false }]
+                }));
+            }
+            if (formData.consequences.length === 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    consequences: [{
+                        type: `custom_${Date.now()}`,
+                        label: '',
+                        amount: '',
+                        icon: 'AlertTriangle',
+                        color: 'var(--color-danger)'
+                    }]
+                }));
+            }
         }
     }, [isEdit]);
 
@@ -69,59 +81,83 @@ function ProfileForm() {
             return;
         }
 
-        // Validate weekly plan sum matches weeklyGoalHours
-        const totalPlanned = Object.values(formData.weeklyPlan).reduce((a, b) => a + (parseFloat(b) || 0), 0);
-        if (totalPlanned !== parseFloat(formData.weeklyGoalHours)) {
-            if (!window.confirm(`La suma de las sesiones (${totalPlanned}h) no coincide con la meta semanal (${formData.weeklyGoalHours}h). ¿Deseas continuar de todas formas?`)) {
+        // Sanitization Logic: Convert empty strings to 0 for storage
+        const goalHours = formData.weeklyGoalHours === '' ? 0 : parseFloat(formData.weeklyGoalHours);
+
+        const sanitizedWeeklyPlan = Object.entries(formData.weeklyPlan).reduce((acc, [day, val]) => ({
+            ...acc,
+            [day]: val === '' ? 0 : parseFloat(val)
+        }), {});
+
+        const totalPlanned = Object.values(sanitizedWeeklyPlan).reduce((a, b) => a + b, 0);
+
+        if (totalPlanned !== goalHours) {
+            if (!window.confirm(`La suma de las sesiones (${totalPlanned}h) no coincide con la meta semanal (${goalHours}h). ¿Deseas continuar de todas formas?`)) {
                 return;
             }
         }
 
+        const sanitizedData = {
+            name: formData.name,
+            weeklyGoalHours: goalHours,
+            weeklyPlan: sanitizedWeeklyPlan,
+            consequences: formData.consequences
+                .filter(c => c.label && c.label.trim() !== '') // Filter out empty consequences
+                .map(c => ({
+                    type: c.type || `consequence_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                    label: c.label || 'Nueva Consecuencia',
+                    amount: (c.amount === '' || isNaN(parseInt(c.amount))) ? 0 : parseInt(c.amount),
+                    icon: c.icon || 'AlertTriangle',
+                    color: c.color || 'var(--color-danger)'
+                }))
+        };
+
         if (isEdit) {
-            // Get the current profile to preserve the breathing task
             const currentProfile = await getProfile(id);
             const breathingTask = currentProfile.tasks?.find(t => t.id === 'breathing');
 
-            // Rebuild tasks array: breathing task + updated custom tasks
             const updatedTasks = [
                 breathingTask || { id: 'breathing', name: 'Respiración consciente', points: 5 },
-                ...formData.customTasks.map(t => ({
-                    id: t.id || `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                    name: t.name,
-                    points: t.points,
-                    isManual: t.isManual || false
-                }))
+                ...formData.customTasks
+                    .filter(t => t.name && t.name.trim() !== '') // Filter out empty tasks
+                    .map(t => ({
+                        id: t.id || `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        name: t.name,
+                        points: (t.points === '' || isNaN(parseInt(t.points))) ? 0 : parseInt(t.points),
+                        isManual: t.isManual || false
+                    }))
             ];
 
-            const sanitizedData = {
-                ...formData,
-                weeklyGoalHours: parseFloat(formData.weeklyGoalHours) || 0,
-                weeklyPlan: Object.entries(formData.weeklyPlan).reduce((acc, [day, val]) => ({
-                    ...acc,
-                    [day]: parseFloat(val) || 0
-                }), {})
-            };
-
             await updateProfile(id, {
-                name: sanitizedData.name,
-                weeklyGoalHours: sanitizedData.weeklyGoalHours,
-                tasks: updatedTasks,
-                consequences: sanitizedData.consequences,
-                weeklyPlan: sanitizedData.weeklyPlan
+                ...sanitizedData,
+                tasks: updatedTasks
             });
         } else {
-            const sanitizedData = {
-                ...formData,
-                weeklyGoalHours: parseFloat(formData.weeklyGoalHours) || 0,
-                weeklyPlan: Object.entries(formData.weeklyPlan).reduce((acc, [day, val]) => ({
-                    ...acc,
-                    [day]: parseFloat(val) || 0
-                }), {})
-            };
-            await createProfile(sanitizedData);
-        }
+            const newTasks = [
+                { id: 'breathing', name: 'Respiración consciente', points: 5 },
+                ...formData.customTasks
+                    .filter(t => t.name && t.name.trim() !== '') // Filter out empty tasks
+                    .map(t => ({
+                        id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        name: t.name,
+                        points: (t.points === '' || isNaN(parseInt(t.points))) ? 0 : parseInt(t.points),
+                        isManual: t.isManual || false
+                    }))
+            ];
 
+            await createProfile({
+                ...sanitizedData,
+                tasks: newTasks
+            });
+        }
         navigate('/');
+    };
+
+    const handleDelete = async () => {
+        if (window.confirm('¿Estás seguro de que quieres eliminar este perfil? Esta acción no se puede deshacer.')) {
+            await deleteProfile(id);
+            navigate('/');
+        }
     };
 
     const addTask = () => {
@@ -171,21 +207,18 @@ function ProfileForm() {
             ...formData,
             weeklyPlan: {
                 ...formData.weeklyPlan,
-                [day]: parseFloat(value) || 0
+                [day]: value
             }
         });
     };
 
     const calculateAutomaticTimes = () => {
-        if (formData.weeklyGoalHours <= 0) {
+        const goal = parseFloat(formData.weeklyGoalHours) || 0;
+        if (goal <= 0) {
             alert('Por favor establece una meta semanal mayor a 0 horas');
             return;
         }
-
-        // 1. Meta semanal total en minutos
-        const weeklyGoalMinutes = formData.weeklyGoalHours * 60;
-
-        // 2. Restamos la hora gratis inicial (60 min)
+        const weeklyGoalMinutes = goal * 60;
         const INITIAL_BALANCE = 60;
         const netMinutesToEarn = weeklyGoalMinutes - INITIAL_BALANCE;
 
@@ -194,11 +227,8 @@ function ProfileForm() {
             return;
         }
 
-        // 3. Calculamos cuánto aportan las tareas MANUALES a la semana
         const manualTasks = formData.customTasks.filter(t => t.isManual);
-        const manualWeeklyContribution = manualTasks.reduce((sum, t) => sum + (t.points * 7), 0);
-
-        // 4. Calculamos cuánto queda por repartir entre las AUTOMÁTICAS
+        const manualWeeklyContribution = manualTasks.reduce((sum, t) => sum + (parseFloat(t.points) * 7 || 0), 0);
         const remainingToDistribute = netMinutesToEarn - manualWeeklyContribution;
         const automaticTasks = formData.customTasks.filter(t => !t.isManual);
         const totalAutomaticCount = automaticTasks.length;
@@ -212,11 +242,8 @@ function ProfileForm() {
             return;
         }
 
-        // 5. Calculamos puntos por cada tarea automática
-        // (Restante / Tareas / 7 días)
         const pointsPerAutoTask = Math.max(1, Math.round(remainingToDistribute / (totalAutomaticCount * 7)));
 
-        // 6. Actualizamos el estado
         const updatedTasks = formData.customTasks.map(task => {
             if (task.isManual) return task;
             return { ...task, points: pointsPerAutoTask };
@@ -225,209 +252,190 @@ function ProfileForm() {
         setFormData({ ...formData, customTasks: updatedTasks });
     };
 
-    if (loading) {
-        return <div className="container">Cargando...</div>;
-    }
+    if (loading) return <div className="fade-in" style={{ paddingTop: '40vh', textAlign: 'center' }}>Cargando...</div>;
+
+    const DAY_LABELS = {
+        friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo', monday: 'Lunes',
+        tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves'
+    };
 
     return (
         <div className="fade-in">
-            <button onClick={() => navigate('/')} className="btn btn-secondary" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <ArrowLeft size={20} />
-                Volver
-            </button>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', color: 'var(--accent-primary)', cursor: 'pointer', fontSize: '17px' }}>
+                    <ChevronLeft size={24} style={{ marginLeft: '-8px' }} /> ATRÁS
+                </div>
+            </div>
 
-            <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
-                <h2 style={{ marginBottom: 'var(--spacing-xl)', fontSize: 'var(--font-size-2xl)' }}>
-                    {isEdit ? 'Editar Perfil' : 'Crear Nuevo Perfil'}
-                </h2>
+            <h1 className="header-large">{isEdit ? 'Editar Perfil' : 'Nuevo Perfil'}</h1>
 
-                <form onSubmit={handleSubmit}>
-                    {/* Name */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label className="label">Nombre del niño/a</label>
-                        <input
-                            type="text"
-                            className="input"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Ej: María"
-                            required
-                        />
-                    </div>
-
-                    {/* Weekly Goal */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <label className="label">Meta semanal (horas)</label>
-                        <input
-                            type="number"
-                            className="input"
-                            value={formData.weeklyGoalHours}
-                            onChange={(e) => setFormData({ ...formData, weeklyGoalHours: parseInt(e.target.value) || 0 })}
-                            placeholder="Ej: 5"
-                            min="0"
-                        />
-                        <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)' }}>
-                            Horas que quiere acumular esta semana
-                        </small>
-                    </div>
-
-                    {/* Weekly Distribution (Sessions) */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)', padding: 'var(--spacing-md)', background: 'rgba(99, 102, 241, 0.05)', borderRadius: 'var(--border-radius-sm)', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
-                        <label className="label">Planificación de Gasto (Sesiones)</label>
-                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                            Distribuye la meta de {formData.weeklyGoalHours}h en los días que se suele gastar el tiempo (ej: 3h viernes, 3h sábado):
-                        </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 'var(--spacing-xs)' }}>
-                            {['friday', 'saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday'].map(day => (
-                                <div key={day}>
-                                    <label className="label" style={{ fontSize: '10px', textTransform: 'uppercase', marginBottom: '2px', opacity: 0.8 }}>
-                                        {day === 'friday' ? 'Viernes' :
-                                            day === 'saturday' ? 'Sábado' :
-                                                day === 'sunday' ? 'Domingo' :
-                                                    day === 'monday' ? 'Lunes' :
-                                                        day === 'tuesday' ? 'Martes' :
-                                                            day === 'wednesday' ? 'Miércoles' : 'Jueves'}
-                                    </label>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <input
-                                            type="number"
-                                            className="input"
-                                            style={{ padding: 'var(--spacing-xs) var(--spacing-sm)', fontSize: 'var(--font-size-sm)' }}
-                                            value={formData.weeklyPlan[day]}
-                                            onChange={(e) => updateWeeklyPlan(day, e.target.value)}
-                                            min="0"
-                                            step="0.5"
-                                        />
-                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>h</span>
-                                    </div>
-                                </div>
-                            ))}
+            <form id="profile-form" onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '32px' }}>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>INFORMACIÓN BÁSICA</span>
+                    <div className="card" style={{ padding: '0 0 0 16px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '12px 16px 12px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre</div>
+                            <input
+                                className="input"
+                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '17px', width: '100%' }}
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="Nombre"
+                                required
+                            />
+                        </div>
+                        <div style={{ padding: '12px 16px 12px 0' }}>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '4px' }}>Meta Semanal (horas)</div>
+                            <input
+                                type="number"
+                                className="input"
+                                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '17px', width: '100%' }}
+                                value={formData.weeklyGoalHours}
+                                onChange={(e) => setFormData({ ...formData, weeklyGoalHours: e.target.value })}
+                                placeholder="Ej: 5"
+                            />
                         </div>
                     </div>
+                </div>
 
-                    {/* Custom Tasks */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                            <label className="label" style={{ marginBottom: 0 }}>Tareas personalizadas</label>
-                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                                <button type="button" onClick={calculateAutomaticTimes} className="btn btn-sm btn-secondary">
-                                    <Calculator size={16} /> Calcular Automático
-                                </button>
-                                <button type="button" onClick={addTask} className="btn btn-sm btn-primary">
-                                    + Añadir Tarea
-                                </button>
-                            </div>
-                        </div>
-
-                        {formData.customTasks.map((task, index) => (
-                            <div key={index} style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr auto auto auto',
-                                gap: 'var(--spacing-sm)',
-                                marginBottom: 'var(--spacing-sm)',
-                                alignItems: 'center'
-                            }}>
-                                <input
-                                    type="text"
-                                    className="input"
-                                    value={task.name}
-                                    onChange={(e) => updateTask(index, 'name', e.target.value)}
-                                    placeholder="Nombre de la tarea"
-                                />
+                <div style={{ marginBottom: '32px' }}>
+                    <span className="text-label" style={{ paddingLeft: '16px' }}>PLAN DE SESIONES (HORAS)</span>
+                    <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+                        {Object.entries(DAY_LABELS).map(([key, label], idx, arr) => (
+                            <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: idx < arr.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                                <span style={{ fontSize: '17px' }}>{label}</span>
                                 <input
                                     type="number"
-                                    className="input"
-                                    value={task.points}
-                                    onChange={(e) => updateTask(index, 'points', parseInt(e.target.value) || 5)}
-                                    placeholder="Puntos"
-                                    min="1"
-                                    style={{ width: '100px' }}
+                                    step="0.5"
+                                    placeholder="0"
+                                    value={formData.weeklyPlan[key]}
+                                    onChange={(e) => updateWeeklyPlan(key, e.target.value)}
+                                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', padding: '6px', width: '60px', textAlign: 'center', fontSize: '17px' }}
                                 />
-                                <label style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap',
-                                    fontSize: 'var(--font-size-sm)'
-                                }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={task.isManual || false}
-                                        onChange={(e) => updateTask(index, 'isManual', e.target.checked)}
-                                        style={{ cursor: 'pointer' }}
-                                    />
-                                    Manual
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => removeTask(index)}
-                                    className="btn btn-danger btn-sm"
-                                >
-                                    ✕
-                                </button>
                             </div>
                         ))}
-
-                        <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
-                            Nota: "Respiración consciente" (+5 Min) se añade automáticamente. Marca "Manual" para evitar que el cálculo automático modifique una tarea.
-                        </small>
                     </div>
+                </div>
 
-                    {/* Consequences */}
-                    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-md)' }}>
-                            <label className="label" style={{ marginBottom: 0 }}>Consecuencias</label>
-                            <button type="button" onClick={addConsequence} className="btn btn-sm btn-primary">
-                                + Añadir Consecuencia
+                <div style={{ marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
+                        <span className="text-label" style={{ paddingLeft: '16px' }}>TAREAS</span>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <button type="button" onClick={calculateAutomaticTimes} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                                <Calculator size={14} /> Auto
+                            </button>
+                            <button type="button" onClick={addTask} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                                <Plus size={14} /> Añadir
                             </button>
                         </div>
+                    </div>
 
-                        {formData.consequences.map((consequence, index) => (
-                            <div key={index} style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr auto auto',
-                                gap: 'var(--spacing-sm)',
-                                marginBottom: 'var(--spacing-sm)'
-                            }}>
+                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                        {formData.customTasks.map((task, index) => (
+                            <div key={index} style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
                                 <input
-                                    type="text"
-                                    className="input"
-                                    value={consequence.label}
-                                    onChange={(e) => updateConsequence(index, 'label', e.target.value)}
-                                    placeholder="Nombre de la consecuencia"
+                                    value={task.name}
+                                    onChange={(e) => updateTask(index, 'name', e.target.value)}
+                                    placeholder="Nombre Tarea"
+                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '17px' }}
                                 />
-                                <input
-                                    type="number"
-                                    className="input"
-                                    value={consequence.amount}
-                                    onChange={(e) => updateConsequence(index, 'amount', parseInt(e.target.value) || 0)}
-                                    placeholder="Minutos"
-                                    min="1"
-                                    style={{ width: '100px' }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => removeConsequence(index)}
-                                    className="btn btn-danger btn-sm"
-                                >
-                                    ✕
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        value={task.points}
+                                        onChange={(e) => updateTask(index, 'points', e.target.value)}
+                                        style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', padding: '4px', textAlign: 'center' }}
+                                    />
+                                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>min</span>
+                                </div>
+                                <button type="button" onClick={() => removeTask(index)} style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer' }}>
+                                    <Trash2 size={18} />
                                 </button>
                             </div>
                         ))}
-
-                        <small style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)', display: 'block', marginTop: 'var(--spacing-sm)' }}>
-                            Penalizaciones en minutos que se restarán del saldo
-                        </small>
                     </div>
+                </div>
 
-                    {/* Submit */}
-                    <button type="submit" className="btn btn-success btn-lg" style={{ width: '100%' }}>
-                        <Save size={20} />
+                <div style={{ marginBottom: '40px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '16px' }}>
+                        <span className="text-label" style={{ paddingLeft: '16px' }}>CONSECUENCIAS</span>
+                        <button type="button" onClick={addConsequence} style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                            <Plus size={14} /> Añadir
+                        </button>
+                    </div>
+                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                        {formData.consequences.map((consequence, index) => (
+                            <div key={index} style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
+                                <input
+                                    value={consequence.label}
+                                    onChange={(e) => updateConsequence(index, 'label', e.target.value)}
+                                    placeholder="Nombre"
+                                    style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, fontSize: '17px' }}
+                                />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="number"
+                                        placeholder="0"
+                                        value={consequence.amount}
+                                        onChange={(e) => updateConsequence(index, 'amount', e.target.value)}
+                                        style={{ width: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', padding: '4px', textAlign: 'center' }}
+                                    />
+                                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>min</span>
+                                </div>
+                                <button type="button" onClick={() => removeConsequence(index)} style={{ background: 'none', border: 'none', color: 'var(--accent-danger)', cursor: 'pointer' }}>
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <button
+                        type="submit"
+                        className="btn"
+                        style={{
+                            width: '100%',
+                            background: 'transparent',
+                            border: '1px solid var(--accent-success)',
+                            color: 'var(--accent-success)',
+                            fontSize: '17px',
+                            fontWeight: 500,
+                            padding: '12px',
+                            borderRadius: '12px',
+                            cursor: 'pointer'
+                        }}
+                    >
                         {isEdit ? 'Guardar Cambios' : 'Crear Perfil'}
                     </button>
-                </form>
-            </div>
+
+                    {isEdit && (
+                        <button
+                            type="button"
+                            onClick={handleDelete}
+                            className="btn"
+                            style={{
+                                width: '100%',
+                                background: 'transparent',
+                                border: '1px solid var(--accent-danger)',
+                                color: 'var(--accent-danger)',
+                                fontSize: '17px',
+                                fontWeight: 500,
+                                padding: '12px',
+                                borderRadius: '12px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Eliminar Perfil
+                        </button>
+                    )}
+                </div>
+
+                <div style={{ height: '40px' }} />
+
+            </form>
         </div>
     );
 }

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { subscribeToTransactions } from '../utils/storage';
 import { isCurrentWeek } from '../utils/dateUtils';
 
@@ -19,15 +18,15 @@ function WeeklySessions({ profile }) {
     if (plannedDays.length === 0) return null;
 
     const DAY_LABELS = {
-        friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo', monday: 'Lunes',
-        tuesday: 'Martes', wednesday: 'Miércoles', thursday: 'Jueves'
+        friday: 'VI', saturday: 'SA', sunday: 'DO', monday: 'LU',
+        tuesday: 'MA', wednesday: 'MI', thursday: 'JU'
     };
 
     const calculateSessionStats = (dayKey) => {
         const plannedMinutes = (profile.weeklyPlan[dayKey] || 0) * 60;
 
+        // LOGIC PRESERVED FROM OLD COMMIT:
         // Sum penalties assigned to this session in the CURRENT week
-        // Note: For simplicity, we filter transactions that have targetSession === dayKey
         const penalties = transactions
             .filter(tx =>
                 tx.targetSession === dayKey &&
@@ -46,72 +45,54 @@ function WeeklySessions({ profile }) {
     };
 
     return (
-        <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-lg)' }}>
-                <Calendar size={24} color="var(--color-primary)" />
-                <h3 style={{ fontSize: 'var(--font-size-xl)' }}>Plan de Sesiones Semanal</h3>
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${plannedDays.length}, 1fr)`, gap: '1px', background: 'var(--border-subtle)', borderRadius: '12px', overflow: 'hidden' }}>
+            {plannedDays.map(([dayKey, hours]) => {
+                const stats = calculateSessionStats(dayKey);
+                const percentage = stats.planned > 0 ? (stats.available / stats.planned) * 100 : 0;
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--spacing-sm)' }}>
-                {plannedDays.map(([dayKey, hours]) => {
-                    const stats = calculateSessionStats(dayKey);
-                    const percentage = (stats.available / stats.planned) * 100;
-                    const statusColor = percentage === 100 ? 'var(--color-success)' :
-                        percentage > 50 ? 'var(--color-warning)' : 'var(--color-danger)';
+                // Colors
+                const isFull = percentage === 100;
+                const strokeColor = isFull ? 'var(--accent-success)' : stats.available === 0 ? 'var(--accent-danger)' : 'var(--accent-warning)';
 
-                    return (
-                        <div key={dayKey} style={{
-                            padding: 'var(--spacing-md)',
-                            background: 'var(--bg-secondary)',
-                            borderRadius: 'var(--border-radius-sm)',
-                            border: '1px solid var(--border-color)',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-sm)' }}>
-                                <span style={{ fontWeight: 700, textTransform: 'capitalize' }}>{DAY_LABELS[dayKey]}</span>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Meta: {hours}h</span>
-                            </div>
-
-                            <div style={{ fontSize: '24px', fontWeight: 800, color: statusColor, marginBottom: '2px' }}>
-                                {stats.available} <span style={{ fontSize: '14px' }}>Min</span>
-                            </div>
-
-                            {stats.penalties > 0 && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-danger)', fontSize: '11px', fontWeight: 600, marginBottom: 'var(--spacing-sm)' }}>
-                                    <AlertCircle size={12} />
-                                    -{stats.penalties} min de penalización
-                                </div>
-                            )}
-
-                            <div className="progress-bar" style={{ height: '6px' }}>
-                                <div className="progress-fill" style={{
-                                    width: `${percentage}%`,
-                                    background: statusColor,
-                                    transition: 'width 0.5s ease'
-                                }} />
-                            </div>
-
-                            {stats.available === 0 && (
-                                <div style={{
-                                    position: 'absolute', inset: 0,
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    backdropFilter: 'blur(1px)'
-                                }}>
-                                    <span style={{ color: 'var(--color-danger)', fontWeight: 800, fontSize: '12px', transform: 'rotate(-15deg)', border: '2px solid', padding: '2px 8px', borderRadius: '4px' }}>
-                                        AGOTADO
-                                    </span>
-                                </div>
-                            )}
+                return (
+                    <div key={dayKey} style={{
+                        background: 'var(--bg-card)',
+                        padding: '16px 8px',
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                            {DAY_LABELS[dayKey]}
                         </div>
-                    );
-                })}
-            </div>
 
-            <div style={{ marginTop: 'var(--spacing-md)', fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                * El tiempo disponible se calcula restando las penalizaciones asignadas específicamente a cada sesión.
-            </div>
+                        <div style={{ position: 'relative', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg width="44" height="44" viewBox="0 0 36 36">
+                                <path
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke="var(--bg-app)"
+                                    strokeWidth="3"
+                                />
+                                <path
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke={strokeColor}
+                                    strokeWidth="3"
+                                    strokeDasharray={`${percentage}, 100`}
+                                    strokeLinecap="round" // Round makes it nicer
+                                    style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                                />
+                            </svg>
+                            <span style={{ position: 'absolute', fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {stats.available}
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }

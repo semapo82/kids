@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { subscribeToProfiles, subscribeToFamilyChange } from '../utils/storage';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileCard from './ProfileCard';
-import { Users } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 
 function Dashboard() {
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         let unsubscribeProfiles = () => { };
@@ -30,24 +31,29 @@ function Dashboard() {
 
     if (loading) {
         return (
-            <div className="container" style={{ textAlign: 'center', paddingTop: '3rem' }}>
-                <div className="pulse">Actualizando perfiles...</div>
+            <div className="fade-in" style={{ textAlign: 'center', paddingTop: '45vh' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--text-muted)', margin: 'auto' }} className="animate-spin" />
             </div>
         );
     }
 
     if (profiles.length === 0) {
         return (
-            <div className="fade-in" style={{ textAlign: 'center', padding: 'var(--spacing-2xl)' }}>
-                <Users size={64} style={{ color: 'var(--text-muted)', margin: '0 auto var(--spacing-lg)' }} />
-                <h2 style={{ marginBottom: 'var(--spacing-md)', color: 'var(--text-secondary)' }}>
-                    No hay perfiles creados
+            <div className="fade-in" style={{ textAlign: 'center', paddingTop: '100px' }}>
+                <div style={{
+                    width: '80px', height: '80px', borderRadius: '50%', background: 'var(--bg-card)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'
+                }}>
+                    <Users size={32} color="var(--text-secondary)" />
+                </div>
+                <h2 style={{ marginBottom: '10px', color: 'var(--text-primary)' }}>
+                    Comienza tu viaje
                 </h2>
-                <p style={{ color: 'var(--text-muted)', marginBottom: 'var(--spacing-xl)' }}>
-                    Crea el primer perfil para comenzar
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '30px' }}>
+                    Crea el primer perfil para empezar.
                 </p>
-                <Link to="/new-profile" className="btn btn-primary btn-lg">
-                    Crear Primer Perfil
+                <Link to="/new-profile" className="btn-primary" style={{ maxWidth: '200px', margin: '0 auto', textDecoration: 'none' }}>
+                    Crear Perfil
                 </Link>
             </div>
         );
@@ -55,17 +61,31 @@ function Dashboard() {
 
     return (
         <div className="fade-in">
-            <h1 style={{ marginBottom: 'var(--spacing-xl)', fontSize: 'var(--font-size-3xl)' }}>
-                Perfiles
-            </h1>
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                gap: 'var(--spacing-lg)'
-            }}>
+            <h1 className="header-large">Perfiles</h1>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {profiles.map(profile => (
                     <ProfileCard key={profile.id} profile={profile} />
                 ))}
+
+                {/* Add Profile Row Item */}
+                <button
+                    onClick={() => navigate('/new-profile')}
+                    className="card"
+                    style={{
+                        background: 'transparent',
+                        border: '1px dashed var(--border-subtle)',
+                        height: '70px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)'
+                    }}
+                >
+                    <Plus size={20} />
+                    <span style={{ fontSize: '17px', fontWeight: 500 }}>Añadir otro perfil</span>
+                </button>
             </div>
         </div>
     );
