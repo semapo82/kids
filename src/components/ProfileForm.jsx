@@ -106,7 +106,7 @@ function ProfileForm() {
                 name: sanitizedData.name,
                 weeklyGoalHours: sanitizedData.weeklyGoalHours,
                 tasks: updatedTasks,
-                consequences: sensitizedData.consequences,
+                consequences: sanitizedData.consequences,
                 weeklyPlan: sanitizedData.weeklyPlan
             });
         } else {
